@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cairn | Prototype d'aide à la décision pour organisateurs de trail</title>
+<meta name="description" content="Cairn, prototype d'outil d'aide à la décision pour les organisateurs de trail : ravitaillements, pertes alimentaires, navettes, scénarios météo et suivi de course.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cairn, l'aide à la décision pour les organisateurs de trail">
+<meta property="og:description" content="Prototype : ravitaillements, pertes alimentaires, navettes, scénarios météo et suivi de course en direct. Données fictives.">
+<meta property="og:image" content="https://paullefrais.github.io/cairn/apercu.png">
+<meta property="og:url" content="https://paullefrais.github.io/cairn/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 30'><ellipse cx='13' cy='26' rx='12' ry='4' fill='%232F5D4A'/><ellipse cx='13' cy='18.5' rx='9' ry='3.6' fill='%232F5D4A' opacity='.8'/><ellipse cx='13' cy='11.5' rx='6.5' ry='3' fill='%232F5D4A' opacity='.65'/><ellipse cx='13' cy='5.5' rx='4' ry='2.4' fill='%23E2A900'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F0; --card:#FFFFFF; --ink:#1E2B25; --muted:#5C6B63; --rule:#D5DCD5;
+  --pine:#2F5D4A; --pine-soft:#DDE9E2; --mark:#E2A900; --mark-soft:#FBF0CC; --alert:#C42B2B; --alert-soft:#F8DEDB;
+  --head:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141B18; --card:#1C2521; --ink:#E4EBE6; --muted:#9AAAA1; --rule:#2F3B35;
+  --pine:#7FC2A3; --pine-soft:#22342C; --mark:#F0C23A; --mark-soft:#3A3218; --alert:#F07A72; --alert-soft:#3D2120;}}
+:root[data-theme="dark"]{
+  --paper:#141B18; --card:#1C2521; --ink:#E4EBE6; --muted:#9AAAA1; --rule:#2F3B35;
+  --pine:#7FC2A3; --pine-soft:#22342C; --mark:#F0C23A; --mark-soft:#3A3218; --alert:#F07A72; --alert-soft:#3D2120;}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none !important}
+html,body{margin:0}
+body{background:var(--paper); color:var(--ink); font:400 1rem/1.5 var(--body); font-variant-numeric:tabular-nums}
+button,input{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--mark); outline-offset:2px}
+h1,h2,h3{font-family:var(--head); line-height:1.15; margin:0}
+
+/* En-tête */
+.top{display:flex; align-items:center; gap:18px; padding:12px 24px; border-bottom:1px solid var(--rule); background:var(--card); flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:10px; font:700 1.45rem var(--head); letter-spacing:.01em}
+.race{display:flex; flex-direction:column; line-height:1.25}
+.race strong{font:600 1.05rem var(--head)}
+.race span{color:var(--muted); font-size:.9rem}
+.top .spacer{flex:1}
+.fake{font-size:.82rem; padding:3px 10px; border-radius:99px; background:var(--mark-soft); color:var(--ink); border:1px solid var(--mark)}
+.countdown{font:600 1rem var(--head); color:var(--pine)}
+
+/* Structure */
+.layout{display:grid; grid-template-columns:230px minmax(0,1fr); min-height:calc(100vh - 70px)}
+nav.side{border-right:1px solid var(--rule); padding:20px 14px; background:var(--card)}
+.group{font:600 .85rem var(--head); color:var(--muted); margin:18px 10px 6px}
+.group:first-child{margin-top:0}
+.side a{display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:6px; color:var(--ink); text-decoration:none}
+.side a:hover{background:var(--paper)}
+.side a[aria-current="page"]{background:var(--pine); color:var(--card)}
+.side a .dot{width:8px; height:8px; border-radius:50%; background:currentColor; opacity:.5}
+main{padding:28px 32px 60px; max-width:1180px}
+.view-head{margin-bottom:22px}
+.view-head h1{font-size:2rem}
+.view-head p{margin:6px 0 0; color:var(--muted); max-width:70ch}
+
+/* Blocs */
+.grid{display:grid; gap:16px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.panel{background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:18px 20px}
+.panel h2{font-size:1.2rem; margin-bottom:12px}
+.stat .v{font:700 2rem/1 var(--head)}
+.stat .l{color:var(--muted); font-size:.92rem; margin-top:6px}
+.stat.warn .v{color:var(--alert)}
+.mt{margin-top:16px}
+table{width:100%; border-collapse:collapse; font-size:.95rem}
+th{font:600 .9rem var(--head); color:var(--muted); text-align:left; padding:8px 10px; border-bottom:1px solid var(--rule)}
+td{padding:9px 10px; border-bottom:1px solid var(--rule)}
+td.n,th.n{text-align:right}
+tr:last-child td{border-bottom:none}
+.tbl{overflow-x:auto}
+.tag{display:inline-block; white-space:nowrap; font-size:.82rem; padding:2px 9px; border-radius:99px; border:1px solid var(--rule)}
+.tag.ok{background:var(--pine-soft); border-color:transparent}
+.tag.peak{background:var(--mark-soft); border-color:var(--mark)}
+.tag.bad{background:var(--alert-soft); color:var(--alert); border-color:transparent}
+.alerts{list-style:none; margin:0; padding:0}
+.alerts li{display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--rule)}
+.alerts li:last-child{border-bottom:none}
+.alerts .ic{flex:none; width:10px; height:10px; border-radius:50%; margin-top:7px; background:var(--mark)}
+.alerts .ic.r{background:var(--alert)}
+.alerts .ic.g{background:var(--pine)}
+.check label{display:flex; gap:10px; align-items:flex-start; padding:7px 0; cursor:pointer}
+.check input{margin-top:4px; accent-color:var(--pine)}
+.bar{height:8px; background:var(--paper); border-radius:99px; overflow:hidden}
+.bar i{display:block; height:100%; background:var(--pine)}
+svg{display:block; width:100%; height:auto}
+.svgtext{font:500 11px var(--body); fill:var(--muted)}
+.svglabel{font:600 12px var(--head); fill:var(--ink)}
+.svgtext,.svglabel{paint-order:stroke; stroke:var(--card); stroke-width:3px; stroke-linejoin:round}
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:.88rem; color:var(--muted); margin-top:8px}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:14px; height:4px; border-radius:2px; display:inline-block}
+.chips{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+.chip{border:1px solid var(--rule); background:var(--card); border-radius:99px; padding:6px 14px; cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--card); border-color:var(--ink)}
+.range{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.range input{flex:1; min-width:180px; accent-color:var(--pine)}
+.range output{font:700 1.4rem var(--head); min-width:70px}
+.plan{border:1px solid var(--rule); border-radius:8px; padding:16px 18px; background:var(--card)}
+.plan.active{border:2px solid var(--alert); box-shadow:0 0 0 4px var(--alert-soft)}
+.plan.active.calm{border-color:var(--pine); box-shadow:0 0 0 4px var(--pine-soft)}
+.plan h3{font-size:1.2rem; display:flex; justify-content:space-between; gap:8px; align-items:center}
+.plan ul{margin:10px 0 0; padding-left:18px}
+.plan li{margin:4px 0}
+.hours{display:grid; grid-template-columns:repeat(13,minmax(44px,1fr)); gap:4px; overflow-x:auto}
+.hour{text-align:center; padding:8px 2px; border-radius:6px; background:var(--paper); font-size:.85rem}
+.hour b{display:block; font:600 .95rem var(--head)}
+.hour.risk{background:var(--alert-soft)}
+.hour.mid{background:var(--mark-soft)}
+.hour.race{outline:1px dashed var(--muted)}
+.clock{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.clock output{font:700 2.4rem/1 var(--head); min-width:110px}
+.clock input{flex:1; min-width:200px; accent-color:var(--pine)}
+.btn{border:1px solid var(--ink); background:var(--ink); color:var(--card); border-radius:6px; padding:8px 16px; cursor:pointer; font-weight:600}
+.btn.ghost{background:transparent; color:var(--ink)}
+.segs{display:grid; gap:4px}
+.log{list-style:none; margin:0; padding:0; max-height:260px; overflow:auto; font-size:.93rem}
+.log li{padding:6px 0; border-bottom:1px solid var(--rule)}
+.log time{font:600 .95rem var(--head); color:var(--pine); margin-right:10px}
+.note{color:var(--muted); font-size:.9rem}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.side{border-right:none; border-bottom:1px solid var(--rule); display:flex; gap:6px; overflow-x:auto; padding:10px 12px}
+  .group{display:none}
+  .side a{white-space:nowrap}
+  main{padding:20px 16px 48px}
+  .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3,.g2{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:no-preference){.plan,.chip{transition:background .15s, border-color .15s}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg width="26" height="30" viewBox="0 0 26 30" aria-hidden="true" style="width:26px">
+      <ellipse cx="13" cy="26" rx="12" ry="4" fill="var(--pine)"/>
+      <ellipse cx="13" cy="18.5" rx="9" ry="3.6" fill="var(--pine)" opacity=".8"/>
+      <ellipse cx="13" cy="11.5" rx="6.5" ry="3" fill="var(--pine)" opacity=".65"/>
+      <ellipse cx="13" cy="5.5" rx="4" ry="2.4" fill="var(--mark)"/>
+    </svg>
+    Cairn
+  </div>
+  <div class="race"><strong id="race-name"></strong><span id="race-meta"></span></div>
+  <div class="spacer"></div>
+  <span class="countdown" id="countdown"></span>
+  <span class="fake">Prototype, données fictives</span>
+</header>
+
+<div class="layout">
+  <nav class="side" aria-label="Sections">
+    <div class="group">Préparer la course</div>
+    <a href="#apercu"><span class="dot"></span>Vue d'ensemble</a>
+    <a href="#ravitos"><span class="dot"></span>Ravitaillements</a>
+    <a href="#pertes"><span class="dot"></span>Pertes alimentaires</a>
+    <a href="#navettes"><span class="dot"></span>Navettes</a>
+    <a href="#meteo"><span class="dot"></span>Scénarios météo</a>
+    <div class="group">Jour J</div>
+    <a href="#direct"><span class="dot"></span>Course en direct</a>
+  </nav>
+
+  <main>
+    <!-- ================= VUE D'ENSEMBLE ================= -->
+    <section id="v-apercu" data-view="apercu">
+      <div class="view-head"><h1>Vue d'ensemble</h1><p>Ce qu'il faut savoir sur l'édition, et les points qui demandent une décision.</p></div>
+      <div class="grid g4" id="kpis"></div>
+      <div class="panel mt"><h2>Profil du parcours et affluence aux ravitaillements</h2><div id="profile"></div>
+        <div class="legend"><span><i style="background:var(--mark)"></i>Pic d'affluence prévu</span><span><i style="background:var(--pine)"></i>Ravitaillement</span></div></div>
+      <div class="grid g2 mt">
+        <div class="panel"><h2>À décider</h2><ul class="alerts" id="alerts"></ul></div>
+        <div class="panel check"><h2>Préparation</h2><div class="bar"><i id="prep-bar"></i></div><p class="note" id="prep-txt"></p><div id="prep"></div></div>
+      </div>
+    </section>
+
+    <!-- ================= RAVITAILLEMENTS ================= -->
+    <section id="v-ravitos" data-view="ravitos" hidden>
+      <div class="view-head"><h1>Ravitaillements</h1><p>Passages prévus à partir de la distribution des temps des éditions passées. Les quantités et les bénévoles en découlent.</p></div>
+      <div class="panel"><h2>Coureurs par demi-heure</h2><div class="chips" id="rav-chips"></div><div id="rav-chart"></div></div>
+      <div class="panel mt tbl"><h2>Besoins par ravitaillement</h2><table id="rav-table"></table>
+        <p class="note">Hypothèses : 0,6 L d'eau et 120 g de solide par coureur et par ravito, majorés de 30 % si la température dépasse 25 °C. Un bénévole pour 45 coureurs par heure au pic, plus deux.</p></div>
+    </section>
+
+    <!-- ================= PERTES ================= -->
+    <section id="v-pertes" data-view="pertes" hidden>
+      <div class="view-head"><h1>Pertes alimentaires</h1><p>Commander au plus juste : comparer ce qui a été jeté l'an dernier avec le besoin prévu cette année, selon la marge de sécurité choisie.</p></div>
+      <div class="grid g3" id="waste-kpis"></div>
+      <div class="panel mt"><h2>Marge de sécurité sur le solide</h2>
+        <div class="range"><input type="range" id="margin" min="0" max="40" step="5" value="15" aria-label="Marge de sécurité en pourcentage"><output id="margin-out">15 %</output></div>
+        <p class="note">Au-delà de 20 %, le risque de rupture devient négligeable mais les pertes remontent.</p></div>
+      <div class="grid g2 mt">
+        <div class="panel"><h2>Solide par ravito, en kg</h2><div id="waste-chart"></div>
+          <div class="legend"><span><i style="background:var(--muted); opacity:.45"></i>Commandé l'an dernier</span><span><i style="background:var(--alert)"></i>Jeté l'an dernier</span><span><i style="background:var(--pine)"></i>Recommandé cette année</span></div></div>
+        <div class="panel tbl"><h2>Détail</h2><table id="waste-table"></table></div>
+      </div>
+      <div class="panel mt"><h2>Pistes pour réduire encore</h2><ul class="alerts">
+        <li><span class="ic g"></span><span>Réserver les produits frais aux premiers ravitos et basculer vers du sec en fin de course, quand le flux baisse.</span></li>
+        <li><span class="ic g"></span><span>Livrer les derniers ravitos en deux temps : une partie au départ, le complément selon les passages réels à R2.</span></li>
+        <li><span class="ic g"></span><span>Prévoir un partenaire local (épicerie solidaire, banque alimentaire) pour les invendus scellés.</span></li>
+      </ul></div>
+    </section>
+
+    <!-- ================= NAVETTES ================= -->
+    <section id="v-navettes" data-view="navettes" hidden>
+      <div class="view-head"><h1>Navettes</h1><p>Combien de véhicules, à quelle heure et où : aller vers le départ, rapatriement des abandons, retour des finishers.</p></div>
+      <div class="grid g3" id="nav-kpis"></div>
+      <div class="panel mt"><h2>Places nécessaires par heure</h2><div id="nav-chart"></div>
+        <div class="legend"><span><i style="background:var(--pine)"></i>Retour des finishers</span><span><i style="background:var(--alert)"></i>Rapatriement des abandons</span></div></div>
+      <div class="panel mt tbl"><h2>Rapatriement depuis les ravitaillements</h2><table id="nav-table"></table></div>
+    </section>
+
+    <!-- ================= METEO ================= -->
+    <section id="v-meteo" data-view="meteo" hidden>
+      <div class="view-head"><h1>Scénarios météo</h1><p>Le plan actif est choisi selon les prévisions sur les heures où le gros du peloton est en altitude (encadré pointillé).</p></div>
+      <div class="panel"><h2>Prévision du jour J</h2><div class="chips" id="wx-chips"></div><div class="hours" id="hours"></div><p class="note">Pour chaque heure : température, vent en crête, risque d'orage.</p></div>
+      <div class="grid g3 mt" id="plans"></div>
+    </section>
+
+    <!-- ================= DIRECT ================= -->
+    <section id="v-direct" data-view="direct" hidden>
+      <div class="view-head"><h1>Course en direct</h1><p>Simulation : faites avancer l'horloge pour voir où se trouve le peloton. Avec le chronométrage réel, cette vue se mettrait à jour toute seule.</p></div>
+      <div class="panel"><div class="clock"><output id="clock-out">7h00</output>
+        <input type="range" id="clock" min="390" max="1110" step="5" value="420" aria-label="Heure de la course">
+        <button class="btn" id="play" type="button">Lancer</button></div></div>
+      <div class="grid g4 mt" id="live-kpis"></div>
+      <div class="panel mt"><h2>Répartition du peloton sur le parcours</h2><div id="live-profile"></div></div>
+      <div class="grid g2 mt">
+        <div class="panel tbl"><h2>Barrières horaires</h2><table id="cutoffs"></table></div>
+        <div class="panel"><h2>Journal</h2><ul class="log" id="log"></ul></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   DONNÉES FICTIVES : à remplacer par les vraies données d'une course
+   ============================================================ */
+const RACE = { name:"Trail des Trois Cols", date:new Date(2027,5,12), dateTxt:"Samedi 12 juin 2027",
+  km:42, dplus:2800, entrants:650, start:7, finishCutoff:18, place:"Ariège (course fictive)" };
+const RAVITOS = [
+  { id:"R1", name:"Orri de la Coume",     km:9,  alt:1380, cutoff:9.75,  access:"Piste 4x4", vehicle:"minibus 8 places", trip:"40 min" },
+  { id:"R2", name:"Col de Rabassole",     km:19, alt:1960, cutoff:12.5,  access:"Aucun accès routier", vehicle:"redescente encadrée vers R3", trip:"1h15 à pied" },
+  { id:"R3", name:"Refuge de l'Estagnol", km:29, alt:1720, cutoff:15,    access:"Route forestière", vehicle:"minibus 8 places", trip:"35 min" },
+  { id:"R4", name:"Pla de Montaut",       km:37, alt:1050, cutoff:16.5,  access:"Route", vehicle:"bus 50 places", trip:"20 min" }
+];
+const PROFILE = [[0,620],[4,900],[9,1380],[13,1700],[19,1960],[22,1650],[25,1900],[29,1720],[33,1300],[37,1050],[42,640]];
+const LAST_YEAR = { orderedFactor:[1.42,1.55,1.48,1.62], wastePct:[22,31,27,35] }; // édition précédente
+const SHUTTLE_SHARE = 0.55, BUS = 50;
+const WEATHER = {
+  beau:  { label:"Beau temps",        temp:[8,9,11,14,17,19,21,23,24,24,23,21,19], wind:[10,10,12,15,15,18,20,20,18,15,12,10,10], storm:[0,0,0,0,5,5,10,10,10,5,5,0,0] },
+  orage: { label:"Orage l'après-midi", temp:[10,11,13,16,19,22,24,25,24,21,19,17,16], wind:[10,10,12,15,20,25,30,40,45,35,25,15,10], storm:[0,0,5,5,10,20,35,55,70,60,40,20,10] },
+  vent:  { label:"Vent fort en crête", temp:[5,6,7,8,10,11,12,12,12,11,10,9,8], wind:[30,40,55,70,80,85,80,70,60,50,45,40,35], storm:[0,0,0,5,5,5,5,5,5,0,0,0,0] }
+};
+let wxKey = "orage";
+
+/* ============================================================
+   SIMULATION DES COUREURS (graine fixe : résultats reproductibles)
+   ============================================================ */
+const rng = (s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(7);
+const CP = [...RAVITOS.map(r => ({ km:r.km, cutoff:r.cutoff })), { km:RACE.km, cutoff:RACE.finishCutoff }];
+const runners = [];
+for (let i = 0; i < RACE.entrants; i++) {
+  const u = (rng() + rng() + rng()) / 3;
+  const dur = 4.7 + 6.2 * Math.pow(u, 1.25);
+  let quit = null; if (rng() < 0.08) { const r = rng(); quit = r < .15 ? 0 : r < .5 ? 1 : r < .85 ? 2 : 3; }
+  const r = { dur, pass:[], stop:null };
+  for (let k = 0; k < CP.length; k++) {
+    const t = RACE.start + dur * CP[k].km / RACE.km;
+    if (t > CP[k].cutoff) { r.stop = { type:"hd", idx:k, time:CP[k].cutoff }; break; }
+    r.pass.push(t);
+    if (quit === k) { r.stop = { type:"ab", idx:k, time:t + .1 }; break; }
+  }
+  runners.push(r);
+}
+const passages = RAVITOS.map((_, k) => runners.filter(r => r.pass.length > k).map(r => r.pass[k]));
+const finishers = runners.filter(r => r.pass.length === CP.length).map(r => r.pass[CP.length - 1]);
+const BIN0 = 7, BIN1 = 18.5, STEP = .5, NB = (BIN1 - BIN0) / STEP;
+const hist = arr => { const h = Array(NB).fill(0); arr.forEach(t => { const i = Math.floor((t - BIN0) / STEP); if (i >= 0 && i < NB) h[i]++; }); return h; };
+const H = passages.map(hist);
+const peak = H.map(h => { const m = Math.max(...h); const i = h.indexOf(m); return { perH:m * 2, from:BIN0 + i * STEP }; });
+
+/* ============================================================
+   OUTILS
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const fmt = h => { let H = Math.floor(h), M = Math.round((h - H) * 60); if (M === 60) { H++; M = 0; } return `${H}h${String(M).padStart(2, "0")}`; };
+const nf = n => Math.round(n).toLocaleString("fr-FR");
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const wx = () => WEATHER[wxKey];
+const heat = () => Math.max(...wx().temp) > 25 ? 1.3 : 1;
+const stat = (v, l, warn) => `<div class="panel stat${warn ? " warn" : ""}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+const KM = k => 40 + (k / RACE.km) * 900, ALT = a => 230 - (a - 500) / 1600 * 190;
+function profileSVG(extra = "") {
+  const d = PROFILE.map(([k, a], i) => `${i ? "L" : "M"}${KM(k)} ${ALT(a)}`).join(" ");
+  let s = `<svg viewBox="0 0 980 270" role="img" aria-label="Profil d'altitude du parcours">`;
+  [800, 1200, 1600, 2000].forEach(a => s += `<line x1="40" x2="940" y1="${ALT(a)}" y2="${ALT(a)}" stroke="${css("--rule")}" stroke-dasharray="2 4"/><text class="svgtext" x="34" y="${ALT(a) + 4}" text-anchor="end">${a}</text>`);
+  s += `<path d="${d} L940 240 L40 240 Z" fill="${css("--pine-soft")}"/>` + extra + `<path d="${d}" fill="none" stroke="${css("--ink")}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  s += `<line x1="40" x2="940" y1="240" y2="240" stroke="${css("--rule")}"/>`;
+  [0, 10, 20, 30, 42].forEach(k => s += `<text class="svgtext" x="${KM(k)}" y="258" text-anchor="middle">${k} km</text>`);
+  return s;
+}
+const altAt = k => { for (let i = 1; i < PROFILE.length; i++) { const [k0, a0] = PROFILE[i - 1], [k1, a1] = PROFILE[i]; if (k <= k1) return a0 + (a1 - a0) * (k - k0) / (k1 - k0); } return PROFILE.at(-1)[1]; };
+
+/* Plan météo actif : fenêtre où le gros du peloton est entre R2 et R3 */
+function activePlan() {
+  const w = wx(), win = [10, 11, 12, 13, 14, 15].map(h => h - 6);
+  const storm = Math.max(...win.map(i => w.storm[i])), wind = Math.max(...win.map(i => w.wind[i]));
+  if (wind >= 70) return { key:"C", why:`rafales jusqu'à ${wind} km/h en crête entre 10h et 15h` };
+  if (storm >= 40) return { key:"B", why:`risque d'orage de ${storm} % entre 10h et 15h` };
+  return { key:"A", why:"aucun seuil dépassé sur la fenêtre en altitude" };
+}
+
+/* ============================================================
+   VUES
+   ============================================================ */
+function renderApercu() {
+  const ab = runners.filter(r => r.stop).length, plan = activePlan(), pk = peak.reduce((a, p, i) => p.perH > a.perH ? { ...p, i } : a, { perH:0 });
+  $("#kpis").innerHTML = stat(nf(RACE.entrants), "inscrits") + stat(nf(ab), "abandons et mises hors course estimés")
+    + stat(`${pk.perH}/h`, `pic au ${RAVITOS[pk.i].id}, ${fmt(pk.from)}-${fmt(pk.from + .5)}`) + stat(`Plan ${plan.key}`, "scénario météo actif", plan.key !== "A");
+  let ex = "";
+  RAVITOS.forEach((r, i) => { const w = 18 + peak[i].perH / 6; ex += `<rect x="${KM(r.km) - w / 2}" y="20" width="${w}" height="220" fill="${css("--mark")}" opacity=".28"/>`; });
+  let s = profileSVG(ex);
+  RAVITOS.forEach((r, i) => { const x = KM(r.km), y = ALT(r.alt); s += `<circle cx="${x}" cy="${y}" r="6" fill="${css("--pine")}" stroke="${css("--card")}" stroke-width="2"/><text class="svglabel" x="${x}" y="${y - 14}" text-anchor="middle">${r.id} ${r.name}</text><text class="svgtext" x="${x}" y="${y - 28}" text-anchor="middle">${peak[i].perH} coureurs/h au pic</text>`; });
+  $("#profile").innerHTML = s + "</svg>";
+  const nb = RAVITOS.map((_, i) => runners.filter(r => r.stop && r.stop.idx === i).length);
+  const items = [
+    { c:plan.key === "A" ? "g" : "r", t:`Météo : plan ${plan.key} recommandé, ${plan.why}. Décision à confirmer la veille à 18h.` },
+    { c:"", t:`${RAVITOS[pk.i].id} ${RAVITOS[pk.i].name} : prévoir ${Math.max(3, Math.ceil(pk.perH / 45) + 2)} bénévoles pour le pic de ${fmt(pk.from)}.` },
+    { c:nb[1] > 15 ? "r" : "", t:`R2 sans accès routier : ${nb[1]} coureurs à faire redescendre vers R3, prévoir deux serre-files.` },
+    { c:"g", t:`Commande de solide : ${nf(wasteRows(15).reduce((a, r) => a + r.saved, 0))} kg de moins que l'an dernier avec une marge de 15 %.` }
+  ];
+  $("#alerts").innerHTML = items.map(i => `<li><span class="ic ${i.c}"></span><span>${i.t}</span></li>`).join("");
+}
+const PREP = ["Autorisations préfecture et mairies", "Convention avec les secours en montagne", "Commande des ravitaillements", "Réservation des navettes", "Planning des bénévoles", "Balisage du parcours (J-2)", "Briefing sécurité (J-1)"];
+const prepDone = new Set([0, 1, 2]);
+function renderPrep() {
+  $("#prep").innerHTML = PREP.map((p, i) => `<label><input type="checkbox" data-i="${i}" ${prepDone.has(i) ? "checked" : ""}> ${p}</label>`).join("");
+  const pct = Math.round(prepDone.size / PREP.length * 100);
+  $("#prep-bar").style.width = pct + "%"; $("#prep-txt").textContent = `${prepDone.size} étapes sur ${PREP.length} terminées`;
+}
+$("#prep").addEventListener("change", e => { const i = +e.target.dataset.i; e.target.checked ? prepDone.add(i) : prepDone.delete(i); renderPrep(); });
+
+let ravSel = new Set([0, 1, 2, 3]);
+function renderRavitos() {
+  $("#rav-chips").innerHTML = RAVITOS.map((r, i) => `<button class="chip" type="button" data-i="${i}" aria-pressed="${ravSel.has(i)}">${r.id} ${r.name}</button>`).join("");
+  const max = Math.max(...H.flat()), X = i => 50 + i / (NB - 1) * 880, Y = v => 200 - v / max * 170;
+  const cols = [css("--pine"), css("--mark"), css("--alert"), css("--muted")];
+  let s = `<svg viewBox="0 0 960 240" role="img" aria-label="Coureurs par demi-heure à chaque ravitaillement">`;
+  [0, .5, 1].forEach(f => s += `<line x1="50" x2="930" y1="${Y(max * f)}" y2="${Y(max * f)}" stroke="${css("--rule")}" stroke-dasharray="2 4"/><text class="svgtext" x="44" y="${Y(max * f) + 4}" text-anchor="end">${Math.round(max * f)}</text>`);
+  for (let h = 7; h <= 18; h++) s += `<text class="svgtext" x="${X((h - BIN0) / STEP)}" y="222" text-anchor="middle">${h}h</text>`;
+  H.forEach((h, i) => { if (!ravSel.has(i)) return; s += `<path d="${h.map((v, j) => `${j ? "L" : "M"}${X(j)} ${Y(v)}`).join(" ")}" fill="none" stroke="${cols[i]}" stroke-width="2.5"/><text class="svglabel" x="${X(h.indexOf(Math.max(...h)))}" y="${Y(Math.max(...h)) - 8}" text-anchor="middle">${RAVITOS[i].id}</text>`; });
+  $("#rav-chart").innerHTML = s + "</svg>";
+  $("#rav-table").innerHTML = `<tr><th>Ravito</th><th class="n">Km</th><th>Ouverture</th><th>Fermeture</th><th class="n">Passages</th><th>Pic</th><th class="n">Eau</th><th class="n">Solide</th><th class="n">Bénévoles</th></tr>`
+    + RAVITOS.map((r, i) => { const p = passages[i]; return `<tr><td><b>${r.id}</b> ${r.name}</td><td class="n">${r.km}</td><td>${fmt(Math.min(...p) - .25)}</td><td>${fmt(r.cutoff)}</td><td class="n">${nf(p.length)}</td><td><span class="tag peak">${peak[i].perH}/h à ${fmt(peak[i].from)}</span></td><td class="n">${nf(p.length * .6 * heat())} L</td><td class="n">${nf(p.length * .12)} kg</td><td class="n">${Math.max(3, Math.ceil(peak[i].perH / 45) + 2)}</td></tr>`; }).join("");
+}
+$("#rav-chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; const i = +b.dataset.i; ravSel.has(i) && ravSel.size > 1 ? ravSel.delete(i) : ravSel.add(i); renderRavitos(); });
+
+function wasteRows(m) {
+  return RAVITOS.map((r, i) => { const need = passages[i].length * .12, ordered = need * LAST_YEAR.orderedFactor[i], wasted = ordered * LAST_YEAR.wastePct[i] / 100, reco = need * (1 + m / 100);
+    return { r, need, ordered, wasted, reco, saved:ordered - reco }; });
+}
+function renderPertes() {
+  const m = +$("#margin").value; $("#margin-out").textContent = m + " %";
+  const rows = wasteRows(m), tO = rows.reduce((a, r) => a + r.ordered, 0), tW = rows.reduce((a, r) => a + r.wasted, 0), tR = rows.reduce((a, r) => a + r.reco, 0);
+  $("#waste-kpis").innerHTML = stat(`${nf(tW)} kg`, "jetés l'an dernier", true) + stat(`${nf(tR)} kg`, `à commander cette année avec ${m} % de marge`) + stat(`${Math.round((1 - tR / tO) * 100)} %`, "de volume commandé en moins");
+  const max = Math.max(...rows.map(r => r.ordered)), Y = v => 190 - v / max * 160;
+  let s = `<svg viewBox="0 0 460 220" role="img" aria-label="Solide commandé, jeté et recommandé par ravitaillement">`;
+  rows.forEach((r, i) => { const x = 40 + i * 105;
+    s += `<rect x="${x}" y="${Y(r.ordered)}" width="26" height="${190 - Y(r.ordered)}" fill="${css("--muted")}" opacity=".45"/>`
+      + `<rect x="${x}" y="${Y(r.wasted)}" width="26" height="${190 - Y(r.wasted)}" fill="${css("--alert")}"/>`
+      + `<rect x="${x + 32}" y="${Y(r.reco)}" width="26" height="${190 - Y(r.reco)}" fill="${css("--pine")}"/>`
+      + `<text class="svglabel" x="${x + 29}" y="208" text-anchor="middle">${r.r.id}</text>`; });
+  $("#waste-chart").innerHTML = s + `<line x1="30" x2="450" y1="190" y2="190" stroke="${css("--rule")}"/></svg>`;
+  $("#waste-table").innerHTML = `<tr><th>Ravito</th><th class="n">Commandé N-1</th><th class="n">Jeté N-1</th><th class="n">Recommandé</th></tr>`
+    + rows.map(r => `<tr><td><b>${r.r.id}</b></td><td class="n">${nf(r.ordered)} kg</td><td class="n"><span class="tag bad">${nf(r.wasted)} kg</span></td><td class="n"><b>${nf(r.reco)} kg</b></td></tr>`).join("");
+}
+$("#margin").addEventListener("input", () => { renderPertes(); });
+
+function renderNavettes() {
+  const morning = Math.ceil(RACE.entrants * SHUTTLE_SHARE), buses = Math.ceil(morning / BUS);
+  const hours = []; for (let h = 9; h <= 19; h++) hours.push(h);
+  const fin = hours.map(h => Math.round(finishers.filter(t => t >= h && t < h + 1).length * SHUTTLE_SHARE));
+  const ab = hours.map(h => runners.filter(r => r.stop && r.stop.time >= h && r.stop.time < h + 1).length);
+  const peakSeats = Math.max(...fin.map((v, i) => v + ab[i]));
+  $("#nav-kpis").innerHTML = stat(`${buses} bus`, `aller vers le départ (${nf(morning)} coureurs, 5h45 à 6h30)`) + stat(nf(runners.filter(r => r.stop).length), "coureurs à rapatrier en cours de journée") + stat(`${Math.ceil(peakSeats / BUS)} bus`, `au pic de retour (${peakSeats} places dans l'heure)`);
+  const max = Math.max(...fin.map((v, i) => v + ab[i])), Y = v => 190 - v / max * 160;
+  let s = `<svg viewBox="0 0 960 225" role="img" aria-label="Places de navette nécessaires par heure">`;
+  hours.forEach((h, i) => { const x = 60 + i * 80;
+    s += `<rect x="${x}" y="${Y(fin[i])}" width="44" height="${190 - Y(fin[i])}" fill="${css("--pine")}"/>`
+      + `<rect x="${x}" y="${Y(fin[i] + ab[i])}" width="44" height="${Y(fin[i]) - Y(fin[i] + ab[i])}" fill="${css("--alert")}"/>`
+      + `<text class="svgtext" x="${x + 22}" y="208" text-anchor="middle">${h}h</text>`
+      + (fin[i] + ab[i] ? `<text class="svglabel" x="${x + 22}" y="${Y(fin[i] + ab[i]) - 6}" text-anchor="middle">${fin[i] + ab[i]}</text>` : ""); });
+  $("#nav-chart").innerHTML = s + "</svg>";
+  $("#nav-table").innerHTML = `<tr><th>Ravito</th><th>Accès</th><th>Moyen</th><th>Trajet</th><th class="n">Coureurs</th><th>Créneau le plus chargé</th></tr>`
+    + RAVITOS.map((r, i) => { const st = runners.filter(x => x.stop && x.stop.idx === i), hs = st.map(x => Math.floor(x.stop.time)), mode = hs.sort((a, b) => hs.filter(v => v === b).length - hs.filter(v => v === a).length)[0];
+      return `<tr><td><b>${r.id}</b> ${r.name}</td><td>${r.access}</td><td>${r.vehicle}</td><td>${r.trip}</td><td class="n">${st.length}</td><td>${st.length ? `${mode}h-${mode + 1}h` : "-"}</td></tr>`; }).join("");
+}
+
+const PLANS = {
+  A:{ title:"Plan A, parcours normal", items:["Parcours complet 42 km", "Barrières horaires standard", "Contrôle matériel obligatoire au départ"] },
+  B:{ title:"Plan B, orage", items:["Neutralisation de la crête entre R2 et R3", "Parcours de repli par la vallée (36 km)", "Fermeture de R2 avancée à 11h45", "Abris prévus à R3"] },
+  C:{ title:"Plan C, vent fort ou neige", items:["Parcours bas de 24 km sans passage en crête", "Suppression de R2", "Départ décalé à 8h00", "Couverture de survie et coupe-vent obligatoires"] }
+};
+function renderMeteo() {
+  $("#wx-chips").innerHTML = Object.entries(WEATHER).map(([k, w]) => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === wxKey}">${w.label}</button>`).join("");
+  const w = wx();
+  $("#hours").innerHTML = w.temp.map((t, i) => { const h = i + 6, risk = w.storm[i] >= 40 || w.wind[i] >= 70 ? "risk" : (w.storm[i] >= 20 || w.wind[i] >= 45 ? "mid" : ""), race = h >= 10 && h <= 15 ? " race" : "";
+    return `<div class="hour ${risk}${race}"><b>${h}h</b>${t}°<br>${w.wind[i]} km/h<br>${w.storm[i]} %</div>`; }).join("");
+  const p = activePlan();
+  $("#plans").innerHTML = Object.entries(PLANS).map(([k, pl]) => `<div class="plan${k === p.key ? " active" + (k === "A" ? " calm" : "") : ""}"><h3>${pl.title}${k === p.key ? `<span class="tag ${k === "A" ? "ok" : "bad"}">Actif</span>` : ""}</h3>${k === p.key ? `<p class="note">Déclenché : ${p.why}.</p>` : ""}<ul>${pl.items.map(i => `<li>${i}</li>`).join("")}</ul></div>`).join("");
+}
+$("#wx-chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; wxKey = b.dataset.k; renderMeteo(); renderRavitos(); renderApercu(); });
+
+function renderDirect() {
+  const T = +$("#clock").value / 60; $("#clock-out").textContent = fmt(T);
+  let arrived = 0, out = 0, onc = 0; const pos = [];
+  runners.forEach(r => {
+    if (T < RACE.start) { pos.push(0); return; }
+    if (r.stop && T >= r.stop.time) { out++; return; }
+    const k = Math.min(RACE.km, (T - RACE.start) / r.dur * RACE.km);
+    if (k >= RACE.km) arrived++; else { onc++; pos.push(k); }
+  });
+  $("#live-kpis").innerHTML = stat(T < RACE.start ? nf(RACE.entrants) : nf(onc), T < RACE.start ? "sur la ligne de départ" : "en course") + stat(nf(arrived), "arrivés")
+    + stat(nf(out), "abandons et hors délai", out > 0) + stat(finishers.length && arrived ? fmt(Math.min(...finishers)) : "-", "premier arrivé");
+  const bins = Array(42).fill(0); pos.forEach(k => bins[Math.min(41, Math.floor(k))]++);
+  const mx = Math.max(10, ...bins);
+  let ex = ""; bins.forEach((v, k) => { if (!v) return; const x = KM(k), w = KM(k + 1) - x - 1, h = v / mx * 110; ex += `<rect x="${x}" y="${238 - h}" width="${w}" height="${h}" fill="${css("--mark")}" opacity=".85"/>`; });
+  let s = profileSVG(ex);
+  RAVITOS.forEach(r => s += `<circle cx="${KM(r.km)}" cy="${ALT(altAt(r.km))}" r="5" fill="${css("--pine")}"/><text class="svglabel" x="${KM(r.km)}" y="${ALT(altAt(r.km)) - 12}" text-anchor="middle">${r.id}</text>`);
+  $("#live-profile").innerHTML = s + "</svg>";
+  $("#cutoffs").innerHTML = `<tr><th>Point</th><th>Fermeture</th><th>Statut</th><th class="n">Arrêtés</th></tr>` + CP.map((c, k) => { const name = k < RAVITOS.length ? `${RAVITOS[k].id} ${RAVITOS[k].name}` : "Arrivée";
+    const n = runners.filter(r => r.stop && r.stop.type === "hd" && r.stop.idx === k).length, closed = T >= c.cutoff, soon = !closed && c.cutoff - T <= .5;
+    return `<tr><td>${name}</td><td>${fmt(c.cutoff)}</td><td><span class="tag ${closed ? "bad" : soon ? "peak" : "ok"}">${closed ? "Fermée" : soon ? "Ferme bientôt" : "Ouverte"}</span></td><td class="n">${closed ? n : "-"}</td></tr>`; }).join("");
+  const ev = [{ t:RACE.start, m:`Départ de ${RACE.entrants} coureurs` }];
+  RAVITOS.forEach((r, i) => { ev.push({ t:Math.min(...passages[i]), m:`Premier coureur à ${r.id} ${r.name}` }); ev.push({ t:peak[i].from, m:`Début du pic d'affluence à ${r.id}` }); ev.push({ t:r.cutoff, m:`Fermeture de ${r.id}` }); });
+  ev.push({ t:Math.min(...finishers), m:"Premier coureur à l'arrivée" });
+  $("#log").innerHTML = ev.filter(e => e.t <= T).sort((a, b) => b.t - a.t).map(e => `<li><time>${fmt(e.t)}</time>${e.m}</li>`).join("") || `<li class="note">La course n'a pas commencé.</li>`;
+}
+$("#clock").addEventListener("input", renderDirect);
+let timer = null;
+$("#play").addEventListener("click", () => {
+  if (timer) { clearInterval(timer); timer = null; $("#play").textContent = "Lancer"; return; }
+  $("#play").textContent = "Pause";
+  timer = setInterval(() => { const c = $("#clock"); if (+c.value >= +c.max) { clearInterval(timer); timer = null; $("#play").textContent = "Lancer"; return; } c.value = +c.value + 5; renderDirect(); }, 120);
+});
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function route() {
+  const v = (location.hash || "#apercu").slice(1);
+  document.querySelectorAll("[data-view]").forEach(s => s.hidden = s.dataset.view !== v);
+  document.querySelectorAll(".side a").forEach(a => a.hash === "#" + v ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  window.scrollTo(0, 0);
+}
+addEventListener("hashchange", route);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
+
+function renderAll() { renderApercu(); renderPrep(); renderRavitos(); renderPertes(); renderNavettes(); renderMeteo(); renderDirect(); }
+$("#race-name").textContent = RACE.name;
+$("#race-meta").textContent = `${RACE.dateTxt}, ${RACE.km} km et ${RACE.dplus} m D+, ${RACE.place}`;
+const days = Math.ceil((RACE.date - new Date()) / 864e5);
+$("#countdown").textContent = days > 0 ? `J-${days}` : "Jour J";
+renderAll(); route();
+</script>
+</body>
+</html>
