@@ -1,26 +1,66 @@
-"""Construit data/montcalm.js (données de l'interface Cairn) à partir de l'extraction LiveTrail anonymisée."""
-import json, re, unicodedata, datetime as dt
+"""Construit data/<evenement>.js (données de l'interface Cairn) à partir d'une extraction LiveTrail anonymisée.
+Usage : python3 build_event.py montcalm|grp"""
+import json, re, sys, unicodedata, datetime as dt
 import numpy as np, pandas as pd
 import cairn_model as cm
 
-SRC = 'data/cairn_montcalm_livetrail.json'
-CIBLE = 2027
-TZ = dt.timezone(dt.timedelta(hours=2))
-RACES = ['marath', 'picari', 'picapic', 'novis', 'mineurs', 'kv', 'bynight']
-VARIANTES_2026 = {'marath': ['marath2', 'marath3', 'marath4'], 'picapic': ['pica2', 'pica3', 'pica4']}
-NOMS = {'marath': 'Marathon du Montcalm', 'picari': 'PicAriège', 'picapic': 'PICaPICA', 'novis': 'Trail des Novis',
-        'mineurs': 'Trail des Mineurs', 'kv': 'KV du Sarrasi', 'bynight': 'Trail By Night'}
-ALIAS = {'lartigue a': 'artigue a', 'lartigue r': 'artigue r', 'pinet 1': 'pinet a', 'pinet 2': 'pinet r',
-         'estats': 'estat', 'lagardelle': 'col la gar', 'cret de be': 'crete de b', 'bassies': 'refbassies',
-         'arrivee kv': 'arrivee', 'start': 'depart'}
+EVENTS = {
+    'montcalm': dict(
+        src='data/cairn_montcalm_livetrail.json', name='Challenge du Montcalm', place='Auzat, Ariège',
+        next='mi-août 2027', next_note='dates à confirmer (36e édition du 13 au 16 août 2026)',
+        races=['marath', 'picari', 'picapic', 'novis', 'mineurs', 'kv', 'bynight'],
+        variantes={2026: {'marath': ['marath2', 'marath3', 'marath4'], 'picapic': ['pica2', 'pica3', 'pica4']}},
+        noms={'marath': 'Marathon du Montcalm', 'picari': 'PicAriège', 'picapic': 'PICaPICA', 'novis': 'Trail des Novis',
+              'mineurs': 'Trail des Mineurs', 'kv': 'KV du Sarrasi', 'bynight': 'Trail By Night'},
+        alias={'lartigue a': 'artigue a', 'lartigue r': 'artigue r', 'pinet 1': 'pinet a', 'pinet 2': 'pinet r',
+               'estats': 'estat', 'lagardelle': 'col la gar', 'cret de be': 'crete de b', 'bassies': 'refbassies',
+               'arrivee kv': 'arrivee', 'start': 'depart'}),
+    'grp': dict(
+        src='data/cairn_grp_livetrail.json', name='Grand Raid des Pyrénées', place='Vielle-Aure, Hautes-Pyrénées',
+        next='fin août 2027', next_note='20e édition, dates à confirmer (2026 : du 20 au 22 août)',
+        races=['UT160', 'TDC', 'TDL', 'TDM', 'TDB', 'TDN', 'TDG'], variantes={},
+        noms={'UT160': 'Ultra Tour 160', 'TDC': 'Tour des Cirques', 'TDL': 'Tour des Lacs', 'TDM': 'Tour du Moudang',
+              'TDB': 'Tour du Bastan', 'TDN': 'Tour du Néouvielle', 'TDG': 'Tour de la Gela'},
+        alias={'start': 'depart', 'finish': 'arrivee'}),
+}
+EV_KEY = sys.argv[1] if len(sys.argv) > 1 else 'montcalm'
+EV = EVENTS[EV_KEY]
+try:
+    EV['alias'].update(json.load(open(f'outils/alias_{EV_KEY}.json')))   # alias complémentaires (noms de points qui changent)
+except FileNotFoundError:
+    pass
+SRC, CIBLE, TZ = EV['src'], 2027, dt.timezone(dt.timedelta(hours=2))
+RACES, NOMS, ALIAS = EV['races'], EV['noms'], EV['alias']
 
 raw = json.load(open(SRC))
 
 
 def canon(short):
     s = unicodedata.normalize('NFKD', short or '').encode('ascii', 'ignore').decode().lower()
-    s = re.sub(r"^l'", 'l', s).strip()
+    s = re.sub(r"^l'", 'l', s)
+    s = re.sub(r"[’']", '', s)
+    s = re.sub(r'\s+', ' ', s).strip()
     return ALIAS.get(s, s)
+
+
+def point_keys(pts):
+    """Clés canoniques alignées sur pts (triés par km) : départ, arrivée, et suffixe #2 pour un lieu repassé."""
+    keys, vus = [], {}
+    i_arr = max(range(len(pts)), key=lambda i: (('arriv' in (pts[i]['short'] or '').lower() or 'finish' in (pts[i]['short'] or '').lower()), pts[i]['km']))
+    for i, p in enumerate(pts):
+        if i == 0 and p['km'] < 500:
+            keys.append('depart'); continue
+        if i == i_arr:
+            keys.append('arrivee'); continue
+        c = canon(p['short'])
+        if c.startswith('arrivee') or c in ('depart', 'start') or c.startswith('depart') or c == 'prefinish':
+            keys.append('prefinish' if c != 'depart' else 'depart_bis'); continue
+        if '#' not in c:
+            vus[c] = vus.get(c, 0) + 1
+            if vus[c] > 1:
+                c = f'{c}#{vus[c]}'
+        keys.append(c)
+    return keys
 
 
 def r1(a, nd=1):
@@ -33,7 +73,9 @@ def charger(ed, rid):
     if not m or not m['runners'] or not m['points']:
         return None
     pts = sorted([p for p in m['points'] if not p.get('disabled')], key=lambda p: p['km'])
-    ids = {str(p['id']): canon(p['short']) for p in pts}
+    for p, k in zip(pts, point_keys(pts)):
+        p['key'] = k
+    ids = {str(p['id']): p['key'] for p in pts}
     rows = []
     for ru in m['runners']:
         t = {}
@@ -44,7 +86,7 @@ def charger(ed, rid):
             v = a or b
             if c not in t:
                 t[c] = (v - m['start']) / 3600
-        inter = {c: v for c, v in t.items() if c not in ('depart', 'arrivee', 'prefinish')}
+        inter = {c: v for c, v in t.items() if c not in ('depart', 'arrivee', 'prefinish', 'depart_bis')}
         arr = t.get('arrivee')
         st = ru['st']
         if st == 'FINISHER' or (st in ('ON_RACE', 'UNRANKED') and arr):
@@ -66,8 +108,8 @@ def charger(ed, rid):
 def info_points(pts):
     out, vus = [], []
     for p in pts:
-        c = canon(p['short'])
-        if c in ('depart', 'prefinish') or c in [o['key'] for o in out]:
+        c = p['key']
+        if c in ('depart', 'prefinish', 'depart_bis') or c in [o['key'] for o in out]:
             continue
         if out and abs(p['km'] - out[-1]['km_m']) < 300 and c != 'arrivee':   # doublon entrée/sortie
             continue
@@ -84,7 +126,7 @@ def clock(ts):
 data = {'source': raw['source'], 'cible': CIBLE, 'races': []}
 for rid in RACES:
     eds, pts_ed, meta_ed, partants, notes = {}, {}, {}, {}, {}
-    for ed in range(2022, 2027):
+    for ed in range(2019, 2027):
         res = charger(ed, rid)
         if res is None:
             continue
@@ -93,18 +135,30 @@ for rid in RACES:
         partants[ed] = int((df.statut != 'non_partant').sum())
     # 2026 : parcours éclatés → partants = somme des variantes, édition exclue du modèle de forme
     exclues = set()
-    if rid in VARIANTES_2026 and 2026 in eds:
-        tot, det = partants[2026], []
-        for v in VARIANTES_2026[rid]:
-            mv = raw['editions']['2026'].get(v)
+    for yv, vv in EV['variantes'].items():
+      if rid in vv and yv in eds:
+        tot, det = partants[yv], []
+        for v in vv[rid]:
+            mv = raw['editions'][str(yv)].get(v)
             if mv:   # variantes sans arrivée chronométrée : partant = au moins un pointage après le départ
                 n = sum(1 for ru in mv['runners'] if len(ru['p']) >= 2); tot += n
-                det.append(f"{raw['editions']['2026'][v]['name']} {raw['editions']['2026'][v]['distance']/1000:.0f} km : {n}")
-        det.insert(0, f"parcours officiel : {partants[2026]}")
-        partants[2026] = tot
-        exclues.add(2026)
-        notes[2026] = ('Parcours éclaté en plusieurs variantes raccourcies le jour J (' + ' ; '.join(det) +
+                det.append(f"{mv['name']} {mv['distance']/1000:.0f} km : {n}")
+        det.insert(0, f"parcours officiel : {partants[yv]}")
+        partants[yv] = tot
+        exclues.add(yv)
+        notes[yv] = ('Parcours éclaté en plusieurs variantes raccourcies le jour J (' + ' ; '.join(det) +
                        '). Édition comptée pour la fréquentation, exclue du modèle de forme.')
+    ref = max(e for e in eds if e not in exclues)
+    km_arr = lambda e: max(p['km'] for p in pts_ed[e] if p.get('key') == 'arrivee') / 1000
+    for e in list(eds):
+        if e in exclues:
+            continue
+        if abs(km_arr(e) / km_arr(ref) - 1) > 0.08:
+            exclues.add(e)
+            notes[e] = f"Parcours modifié ({km_arr(e):.1f} km chronométrés contre {km_arr(ref):.1f} km en {ref}) : édition comptée pour la fréquentation, exclue du modèle de forme."
+        elif not (eds[e].statut == 'finisher').any():
+            exclues.add(e)
+            notes[e] = "Aucun finisher enregistré (course arrêtée ou annulée) : édition exclue du modèle."
     ref = max(e for e in eds if e not in exclues)
     P = info_points(pts_ed[ref])
     # garder les points réellement pointés sur l'édition de référence
@@ -116,7 +170,7 @@ for rid in RACES:
     for ed, pts in pts_ed.items():
         for p in pts:
             if any(('AID' in s or 'SUPPLY' in s) for s in (p['services'] or [])):
-                rav[canon(p['short'])] = True
+                rav[p.get('key', canon(p['short']))] = True
     df = pd.concat([d[d.statut != 'non_partant'] for d in eds.values()], ignore_index=True)
     for c in ordre:
         if 'cp_' + c not in df:
@@ -257,6 +311,8 @@ for rid in RACES:
     print(f"{rid}: réf {ref}, éditions {editions}, valides {m['valides']}, N {m['n_pred']:.0f}±{m['n_sd']:.0f}, "
           f"abandon {m['p_dnf']:.1%}, points {ordre}, alertes {m['alertes']}")
 
-js = 'window.CAIRN_DATA = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n'
-open('data/montcalm.js', 'w').write(js)
-print('montcalm.js', round(len(js) / 1e3), 'ko')
+ev_out = dict(id=EV_KEY, name=EV['name'], place=EV['place'], next=EV['next'], next_note=EV['next_note'],
+              source=raw['source'], cible=CIBLE, races=data['races'])
+js = '(window.CAIRN_EVENTS = window.CAIRN_EVENTS || []).push(' + json.dumps(ev_out, ensure_ascii=False, separators=(',', ':')) + ');\n'
+open(f'data/{EV_KEY}.js', 'w').write(js)
+print(f'{EV_KEY}.js', round(len(js) / 1e3), 'ko')

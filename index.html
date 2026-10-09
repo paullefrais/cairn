@@ -162,12 +162,55 @@ td.c, th.c{text-align:center}
 @media (max-width:900px){ .layout{grid-template-columns:minmax(0,1fr)} .top{padding:10px 16px} .picker select{max-width:100%} }
 #rav-table td, #rav-table th{padding:8px 7px}
 .nowrap{white-space:nowrap}
+/* v3 : accueil, thème, logos, infobulles */
+.brand{color:var(--ink); text-decoration:none}
+.icon-btn{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--rule); background:var(--card); color:var(--ink); border-radius:99px; padding:5px 12px; cursor:pointer; font-size:.9rem}
+.icon-btn svg{width:16px; height:16px}
+.icon-btn.sq{padding:7px; border-radius:50%}
+@media (max-width:1300px){ #ev-name{display:none} }
+.side a.home{font-weight:600; margin-bottom:6px}
+.side a .ico{width:18px; height:18px; flex:none}
+body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
+.logo{position:relative; display:inline-flex; align-items:center; justify-content:center; flex:none; width:36px; height:36px; border-radius:8px; overflow:hidden; background:var(--pine-soft); color:var(--pine); font:700 .95rem var(--head); letter-spacing:.02em}
+.logo img{width:100%; height:100%; object-fit:contain; background:#fff}
+.logo.lg{width:64px; height:64px; font-size:1.4rem; border-radius:12px}
+.hero{max-width:780px}
+.hero h1{font-size:2.3rem}
+.hero p{color:var(--muted); font-size:1.08rem; margin:10px 0 0}
+.events{display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr)); margin-top:24px}
+.event{background:var(--card); border:1px solid var(--rule); border-radius:12px; padding:20px 22px}
+.event header{display:flex; gap:14px; align-items:center; margin-bottom:14px}
+.event h2{font-size:1.45rem}
+.event .where{color:var(--muted); font-size:.92rem}
+.next{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; background:var(--mark-soft); border:1px solid var(--mark); border-radius:8px; padding:8px 12px; margin-bottom:14px}
+.next b{font:700 1.1rem var(--head)}
+.next span{color:var(--muted); font-size:.88rem}
+.races{display:flex; flex-wrap:wrap; gap:8px}
+.race-tag{display:flex; flex-direction:column; text-decoration:none; color:var(--ink); border:1px solid var(--rule); border-radius:10px; padding:8px 12px; background:var(--paper); min-width:150px; flex:1 1 150px}
+.race-tag:hover{border-color:var(--pine); background:var(--pine-soft)}
+.race-tag b{font:600 1.02rem var(--head)}
+.race-tag span{color:var(--muted); font-size:.84rem}
+.ev-stats{color:var(--muted); font-size:.88rem; margin-top:12px}
+.site-foot{display:flex; flex-wrap:wrap; align-items:center; gap:14px; justify-content:space-between; border-top:1px solid var(--rule); margin-top:36px; padding-top:18px; color:var(--muted); font-size:.9rem}
+.site-foot .btn{text-decoration:none}
+.chartbox{position:relative}
+.tip{position:absolute; pointer-events:none; background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:8px 10px; font-size:.86rem; box-shadow:0 4px 14px rgba(0,0,0,.14); min-width:170px; z-index:5}
+.tip b{font:600 .98rem var(--head); display:block; margin-bottom:4px}
+.tip div{display:flex; gap:8px; align-items:center; white-space:nowrap}
+.tip i{width:10px; height:10px; border-radius:50%; flex:none}
+.tip em{font-style:normal; color:var(--muted)}
+.selbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px}
+.selbar button{border:none; background:none; color:var(--pine); text-decoration:underline; cursor:pointer; padding:2px 4px; font-size:.9rem}
+.empty{padding:40px 0; text-align:center; color:var(--muted)}
+.callout{font:600 12px var(--head); fill:var(--ink)}
+.callout-sub{font:500 11px var(--body); fill:var(--muted)}
+.callout, .callout-sub{paint-order:stroke; stroke:var(--card); stroke-width:3px; stroke-linejoin:round}
 </style>
 </head>
 <body>
 
 <header class="top">
-  <div class="brand">
+  <a class="brand" href="#accueil" aria-label="Cairn, accueil">
     <svg width="26" height="30" viewBox="0 0 26 30" aria-hidden="true" style="width:26px">
       <ellipse cx="13" cy="26" rx="12" ry="4" fill="var(--pine)"/>
       <ellipse cx="13" cy="18.5" rx="9" ry="3.6" fill="var(--pine)" opacity=".8"/>
@@ -175,19 +218,22 @@ td.c, th.c{text-align:center}
       <ellipse cx="13" cy="5.5" rx="4" ry="2.4" fill="var(--mark)"/>
     </svg>
     Cairn
-  </div>
+  </a>
   <div class="picker">
-    <label for="race-sel" class="race"><span>Challenge du Montcalm</span></label>
+    <span class="logo" id="ev-logo" aria-hidden="true"></span>
+    <label for="race-sel" class="race"><span id="ev-name"></span></label>
     <select id="race-sel" aria-label="Course"></select>
     <span class="meta" id="race-meta"></span>
   </div>
   <div class="spacer"></div>
   <label class="start">Départ prévu <input type="time" id="start-time" step="300"></label>
   <span class="real" id="badge"></span>
+  <button class="icon-btn sq" id="theme" type="button"></button>
 </header>
 
 <div class="layout">
   <nav class="side" aria-label="Sections">
+    <a href="#accueil" class="home"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>Accueil</a>
     <div class="group">Préparer la course</div>
     <a href="#apercu"><span class="dot"></span>Vue d'ensemble</a>
     <a href="#ravitos"><span class="dot"></span>Ravitaillements</a>
@@ -199,8 +245,16 @@ td.c, th.c{text-align:center}
   </nav>
 
   <main>
+    <!-- ================= ACCUEIL ================= -->
+    <section data-view="accueil">
+      <div class="hero"><h1>Préparer chaque édition avec les données des précédentes</h1>
+        <p>Cairn transforme les temps de passage des éditions passées en décisions concrètes pour l'organisateur : affluence à chaque ravitaillement, bénévoles, barrières horaires, rapatriements. Choisissez une course pour commencer.</p></div>
+      <div class="events" id="events"></div>
+      <p class="note mt" id="home-note"></p>
+    </section>
+
     <!-- ================= VUE D'ENSEMBLE ================= -->
-    <section data-view="apercu">
+    <section data-view="apercu" hidden>
       <div class="view-head"><h1 id="ov-title">Vue d'ensemble</h1><p id="ov-sub"></p></div>
       <div class="grid g4" id="kpis"></div>
       <div class="panel mt"><h2>Profil du parcours et affluence prévue</h2><div id="profile"></div>
@@ -219,7 +273,8 @@ td.c, th.c{text-align:center}
       <div class="panel">
         <div class="seg" role="group" aria-label="Mode" id="rav-mode"></div>
         <h2 id="rav-chart-title"></h2>
-        <div class="chips" id="rav-chips"></div><div id="rav-chart"></div>
+        <div class="selbar"><button type="button" data-a="none">Tout désélectionner</button><button type="button" data-a="all">Tout sélectionner</button><button type="button" data-a="rav">Ravitaillements seulement</button></div>
+        <div class="chips" id="rav-chips"></div><div class="chartbox" id="rav-chart"></div>
         <div class="legend" id="rav-legend"></div>
         <p class="note" id="rav-test"></p>
       </div>
@@ -256,7 +311,7 @@ td.c, th.c{text-align:center}
     <!-- ================= METEO ================= -->
     <section data-view="meteo" hidden>
       <div class="view-head"><h1>Scénarios météo</h1><p>Le plan actif est choisi selon les prévisions sur les heures où le gros du peloton est en altitude (encadré pointillé).</p></div>
-      <div class="banner"><b>Onglet en attente.</b> Prévisions et plans fictifs, à construire avec l'organisation. Piste concrète : en 2026, le Marathon et le PICaPICA ont été répartis sur plusieurs parcours raccourcis le jour J.</div>
+      <div class="banner"><b>Onglet en attente.</b> Prévisions et plans fictifs, à construire avec l'organisation. Piste concrète : les éditions raccourcies ou éclatées repérées dans l'historique (Vue d'ensemble) montrent les replis réellement décidés.</div>
       <div class="panel"><h2>Prévision du jour J</h2><div class="chips" id="wx-chips"></div><div class="hours" id="hours"></div><p class="note">Pour chaque heure : température, vent en crête, risque d'orage.</p></div>
       <div class="grid g3 mt" id="plans"></div>
     </section>
@@ -274,15 +329,23 @@ td.c, th.c{text-align:center}
         <div class="panel"><h2>Journal</h2><ul class="log" id="log"></ul></div>
       </div>
     </section>
+    <footer class="site-foot">
+      <span>Cairn, prototype d'aide à la décision pour les organisateurs de trail. Données LiveTrail anonymisées.</span>
+      <a class="btn" id="contact" href="#">Nous contacter</a>
+    </footer>
   </main>
 </div>
 
 <script src="data/montcalm.js"></script>
+<script src="data/grp.js"></script>
 <script>
 /* ============================================================
-   DONNÉES : window.CAIRN_DATA (data/montcalm.js), généré par build_montcalm.py
+   DONNÉES : window.CAIRN_EVENTS (data/<événement>.js), générés par outils/build_event.py
    ============================================================ */
-const D = window.CAIRN_DATA;
+const CONTACT_EMAIL = "";            // ← mettre ici l'adresse de contact (ex. "contact@domaine.fr")
+const LINKEDIN = "https://www.linkedin.com/in/paullefrais";
+const EVENTS = window.CAIRN_EVENTS || [];
+const RACES = EVENTS.flatMap(ev => ev.races.map(r => Object.assign(r, { ev, uid:`${ev.id}-${r.id}` })));
 const $ = s => document.querySelector(s);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const nf = n => Math.round(n).toLocaleString("fr-FR");
@@ -309,6 +372,7 @@ const dateFr = s => new Date(s + "T12:00").toLocaleDateString("fr-FR", { day:"nu
 const P = () => R.points;
 const pred = k => R.pred.points[k];
 const label = p => p.key === "arrivee" ? "Arrivée" : p.name;
+const disp = p => p.key === "arrivee" ? "Arrivée" : (p.name.length <= 16 ? p.name : p.short).replace(/^Refuge (du |de la |de )?/i, "Ref. ");
 const isRav = p => p.ravito;
 function series(pr, key = "p50", step = R.pred.step) { return pr[key].map((v, i) => [(pr.i0 + i) * step, v]); }
 function perHourPeak(pr) {            // pic horaire = meilleure somme de 4 quarts d'heure consécutifs
@@ -364,7 +428,7 @@ function pointMarks(withLabels, onlyRav) {
     if (onlyRav && !isRav(p)) return;
     const x = KM(p.km), y = ALT(p.alt);
     s += `<circle cx="${x}" cy="${y}" r="${isRav(p) ? 5.5 : 3.5}" fill="${css(isRav(p) ? "--pine" : "--muted")}" stroke="${css("--card")}" stroke-width="2"/>`;
-    if (withLabels) { row = x - lastX < 70 ? (row + 1) % 3 : 0; lastX = x; s += `<text class="svglabel" x="${x}" y="${y - 12 - row * 14}" text-anchor="middle">${esc(p.short)}</text>`; }
+    if (withLabels) { row = x - lastX < 70 ? (row + 1) % 3 : 0; lastX = x; s += `<text class="svglabel" x="${x}" y="${y - 12 - row * 14}" text-anchor="middle">${esc(disp(p))}</text>`; }
   });
   return s;
 }
@@ -378,12 +442,12 @@ function busiest() {
 }
 function renderApercu() {
   const n = R.pred.n, start = pred(P()[0].key) ? pred(P()[0].key).n : n, arr = pred("arrivee"), b = busiest(), le = lastEd();
-  $("#ov-title").textContent = `${R.name} : préparer l'édition ${D.cible}`;
+  $("#ov-title").textContent = `${R.name} : préparer l'édition ${R.ev.cible}`;
   $("#ov-sub").textContent = `Prévisions tirées des éditions ${R.model.valides.join(", ")} (LiveTrail). Départ de ${R.start_place}, ${R.distance.toLocaleString("fr-FR")} km et ${nf(R.dplus)} m D+.`;
   $("#kpis").innerHTML =
       stat(nf(R.model.n_pred), "partants attendus", false, `fourchette ${nf(R.model.n_pred - 1.28 * R.model.n_sd)} à ${nf(R.model.n_pred + 1.28 * R.model.n_sd)} ; ${nf(le.partants)} en ${R.ref}`)
     + stat(`${Math.round(R.model.p_dnf * 100)} %`, "d'abandons et hors délai", R.model.p_dnf > .2, `soit environ ${nf(R.model.n_pred - n[1])} coureurs à rapatrier`)
-    + (b ? stat(`${nf(b.pr.pic[1])}`, `coureurs en 15 min au pic, ${esc(b.p.short)}`, false, `vers ${fmtT(b.pr.heure_pic)} ; ${nf(b.h.perH)} sur l'heure la plus chargée`)
+    + (b ? stat(`${nf(b.pr.pic[1])}`, `coureurs en 15 min au pic, ${esc(disp(b.p))}`, false, `vers ${fmtT(b.pr.heure_pic)} ; ${nf(b.h.perH)} sur l'heure la plus chargée`)
          : stat(`${nf(arr.pic[1])}`, "arrivées en 15 min au pic", false, `vers ${fmtT(arr.heure_pic)}`))
     + stat(fmtT(arr.dernier_p90), "fermeture conseillée de l'arrivée", false, `dernier finisher prévu vers ${fmtT(arr.dernier)} (médiane)`);
 
@@ -414,8 +478,8 @@ function renderApercu() {
       + `<td>${h.exclue ? `<span class="tag bad">écartée</span>` : `<span class="tag ok">utilisée</span>`}</td></tr>`).join("");
   $("#hist-note").textContent = R.history.some(h => h.note) ? "Les chiffres d'une édition éclatée en plusieurs parcours ne portent que sur le parcours officiel, sauf la colonne Partants." : "";
   const bt = R.backtest;
-  $("#method").innerHTML = `<p><b>Source.</b> Temps de passage publiés sur LiveTrail pour les éditions ${R.history.map(h => h.edition).join(", ")}, extraits le ${D.source.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? ""} et anonymisés : aucun nom n'est conservé, un identifiant haché permet seulement de reconnaître un même coureur d'une année à l'autre.</p>
-    <p><b>Modèle.</b> Le temps de chaque coureur est décomposé en un niveau personnel et un effet de l'édition (météo, terrain), estimé grâce aux coureurs qui reviennent d'une année sur l'autre (effets estimés : ${Object.entries(R.model.e_fact).map(([e, v]) => `${e} ${v >= 0 ? "+" : ""}${Math.round(v * 100)} %`).join(", ")}, par rapport à la dernière édition). La répartition des temps entre les points dépend du niveau. On simule ensuite 1 000 éditions ${D.cible} pour obtenir une fourchette (P10 à P90) à chaque point. Les éditions récentes pèsent davantage, et une édition tronquée ou éclatée est écartée.</p>
+  $("#method").innerHTML = `<p><b>Source.</b> Temps de passage publiés sur LiveTrail pour les éditions ${R.history.map(h => h.edition).join(", ")}, extraits le ${R.ev.source.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? ""} et anonymisés : aucun nom n'est conservé, un identifiant haché permet seulement de reconnaître un même coureur d'une année à l'autre.</p>
+    <p><b>Modèle.</b> Le temps de chaque coureur est décomposé en un niveau personnel et un effet de l'édition (météo, terrain), estimé grâce aux coureurs qui reviennent d'une année sur l'autre (effets estimés : ${Object.entries(R.model.e_fact).map(([e, v]) => `${e} ${v >= 0 ? "+" : ""}${Math.round(v * 100)} %`).join(", ")}, par rapport à la dernière édition). La répartition des temps entre les points dépend du niveau. On simule ensuite 1 000 éditions ${R.ev.cible} pour obtenir une fourchette (P10 à P90) à chaque point. Les éditions récentes pèsent davantage, et une édition tronquée ou éclatée est écartée.</p>
     ${bt ? `<p><b>Test.</b> Le même modèle, entraîné sur ${bt.train.join(" et ")} seulement, a prédit l'édition ${bt.edition} : voir l'onglet Ravitaillements, mode « Test ».</p>` : ""}
     <p><b>Limites.</b> Le nombre de partants suit la tendance des dernières années (à remplacer par les inscrits réels dès qu'ils sont connus). Les abandons sont placés au dernier point pointé. Les quantités et le nombre de bénévoles reposent sur des ratios à valider.</p>`;
 }
@@ -432,10 +496,11 @@ $("#prep").addEventListener("change", e => { const i = +e.target.dataset.i; e.ta
    ============================================================ */
 let ravMode = "pred", ravSel = null;
 const COLS = () => [css("--pine"), css("--mark"), css("--alert"), "#4C6FB0", "#8E5BA8", css("--muted")];
+const charts = {};
 function bandChart(items, opts = {}) {
   /* items : [{name, color, band:[[t,lo,hi]], line:[[t,v]], real:[[t,v]]}] ; t en heures depuis le départ */
   const pts = items.flatMap(it => [...it.band.map(b => b[0]), ...(it.real || []).map(r => r[0])]);
-  if (!pts.length) return "";
+  if (!pts.length) return `<p class="empty">Sélectionnez au moins un point pour afficher l'affluence.</p>`;
   let t0 = Math.min(...pts), t1 = Math.max(...pts) + R.pred.step;
   const maxV = Math.max(5, ...items.flatMap(it => [...it.band.map(b => b[2]), ...(it.real || []).map(r => r[1])]));
   const X = t => 56 + (t - t0) / (t1 - t0) * 880, Y = v => 210 - v / maxV * 180;
@@ -456,7 +521,33 @@ function bandChart(items, opts = {}) {
     const top = (it.real && it.real.length ? it.real : it.line).reduce((a, b) => b[1] > a[1] ? b : a, [0, -1]);
     if (top[1] > 0) s += `<text class="svglabel" x="${X(top[0] + step / 2)}" y="${Y(top[1]) - 8}" text-anchor="middle">${esc(it.name)}</text>`;
   });
-  return s + `<line x1="56" x2="936" y1="210" y2="210" stroke="${css("--rule")}"/></svg>`;
+  if (opts.id) charts[opts.id] = { t0, t1, step, items };
+  return s + `<line x1="56" x2="936" y1="210" y2="210" stroke="${css("--rule")}"/><line class="guide" x1="0" x2="0" y1="25" y2="210" stroke="${css("--ink")}" stroke-dasharray="3 3" opacity="0" /></svg><div class="tip" hidden></div>`;
+}
+function attachTip(boxSel, id) {
+  const box = $(boxSel);
+  const move = e => {
+    const c = charts[id], svg = box.querySelector("svg"); if (!c || !svg) return;
+    const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 960;
+    const t = c.t0 + (x - 56) / 880 * (c.t1 - c.t0), tip = box.querySelector(".tip"), guide = svg.querySelector(".guide");
+    if (x < 56 || x > 936) { tip.hidden = true; guide.setAttribute("opacity", 0); return; }
+    const tb = Math.floor(t / c.step + 1e-9) * c.step, at = arr => { const v = (arr || []).find(p => Math.abs(p[0] - tb) < 1e-6); return v; };
+    const rows = c.items.map(it => {
+      const b = at(it.band), l = at(it.line), re = it.real ? at(it.real) : null;
+      if (!b && !re) return "";
+      const med = l ? Math.round(l[1]) : 0, rng = b ? `${Math.round(b[1])} à ${Math.round(b[2])}` : "";
+      return it.real ? `<div><i style="background:${it.color}"></i>${esc(it.name)} : <b style="display:inline;margin:0">${re ? re[1] : 0}</b>&nbsp;réels <em>(prévu ${med})</em></div>`
+                     : `<div><i style="background:${it.color}"></i>${esc(it.name)} : <b style="display:inline;margin:0">${med}</b>&nbsp;coureurs <em>(${rng})</em></div>`;
+    }).join("");
+    tip.innerHTML = `<b>${fmt(clock(tb), true)} – ${fmt(clock(tb + c.step), false)}</b>${rows || "<em>Aucun passage prévu</em>"}`;
+    tip.hidden = false;
+    const gx = 56 + (tb + c.step / 2 - c.t0) / (c.t1 - c.t0) * 880; guide.setAttribute("x1", gx); guide.setAttribute("x2", gx); guide.setAttribute("opacity", .5);
+    const bx = box.getBoundingClientRect(), px = e.clientX - bx.left, w = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(bx.width - w, px + (px > bx.width / 2 ? -w - 14 : 14))) + "px";
+    tip.style.top = Math.max(0, e.clientY - bx.top - tip.offsetHeight - 10) + "px";
+  };
+  box.addEventListener("pointermove", move); box.addEventListener("pointerdown", move);
+  box.addEventListener("pointerleave", () => { const tip = box.querySelector(".tip"), g = box.querySelector(".guide"); if (tip) tip.hidden = true; if (g) g.setAttribute("opacity", 0); });
 }
 function defaultSel() {
   const cand = P().filter(p => p.key !== "arrivee" && pred(p.key));
@@ -467,28 +558,28 @@ function defaultSel() {
 function renderRavitos() {
   const bt = R.backtest;
   if (ravMode === "test" && !bt) ravMode = "pred";
-  $("#rav-mode").innerHTML = `<button type="button" data-m="pred" aria-pressed="${ravMode === "pred"}">Prévision ${D.cible}</button>`
+  $("#rav-mode").innerHTML = `<button type="button" data-m="pred" aria-pressed="${ravMode === "pred"}">Prévision ${R.ev.cible}</button>`
     + (bt ? `<button type="button" data-m="test" aria-pressed="${ravMode === "test"}">Test : ${bt.edition} prévu contre réel</button>` : "");
   const avail = P().filter(p => ravMode === "pred" ? pred(p.key) : bt.points[p.key]);
-  if (!ravSel || ![...ravSel].some(k => avail.find(p => p.key === k))) ravSel = defaultSel();
-  $("#rav-chips").innerHTML = avail.map(p => `<button class="chip" type="button" data-k="${p.key}" aria-pressed="${ravSel.has(p.key)}">${isRav(p) ? "● " : ""}${esc(p.short)}</button>`).join("");
+  if (!ravSel) ravSel = defaultSel();
+  $("#rav-chips").innerHTML = avail.map(p => `<button class="chip" type="button" data-k="${p.key}" aria-pressed="${ravSel.has(p.key)}">${isRav(p) ? "● " : ""}${esc(disp(p))}</button>`).join("");
   const cols = COLS(); const sel = avail.filter(p => ravSel.has(p.key));
   const items = sel.map((p, i) => {
     const src = ravMode === "pred" ? pred(p.key) : bt.points[p.key];
     const band = src.p90.map((hi, j) => [(src.i0 + j) * R.pred.step, src.p10[j], hi]);
-    const it = { name:p.short, color:cols[i % cols.length], band, line:series(src) };
+    const it = { name:disp(p), color:cols[i % cols.length], band, line:series(src) };
     if (ravMode === "test") it.real = src.reel.map((v, j) => [(src.i0 + j) * R.pred.step, v]);
     return it;
   });
-  $("#rav-chart-title").textContent = ravMode === "pred" ? `Coureurs attendus par quart d'heure en ${D.cible}` : `Édition ${bt.edition} : prévision faite avec ${bt.train.join(" et ")}, comparée au réel`;
-  $("#rav-chart").innerHTML = bandChart(items);
+  $("#rav-chart-title").textContent = ravMode === "pred" ? `Coureurs attendus par quart d'heure en ${R.ev.cible}` : `Édition ${bt.edition} : prévision faite avec ${bt.train.join(" et ")}, comparée au réel`;
+  $("#rav-chart").innerHTML = bandChart(items, { id:"rav" });
   $("#rav-legend").innerHTML = ravMode === "pred"
     ? `<span><i style="background:${css("--ink")}"></i>Médiane prévue</span><span><i style="background:${css("--ink")}; opacity:.2; height:10px"></i>Fourchette probable (8 éditions sur 10)</span>`
     : `<span><i style="background:${css("--ink")}"></i>Réel</span><span><i style="background:${css("--ink")}; opacity:.5"></i>Prévu (pointillés) et sa fourchette</span>`;
   if (ravMode === "test") {
-    const lines = sel.map(p => { const m = bt.points[p.key].m; return `${esc(p.short)} : pic ${m.err_pic >= 0 ? "surestimé" : "sous-estimé"} de ${nf(Math.abs(m.err_pic))} coureurs, heure du pic ${m.err_heure_pic_min === 0 ? "exacte" : `décalée de ${nf(Math.abs(m.err_heure_pic_min))} min`}, 95 % des coureurs passés ${m.err_p95_min == null ? "" : Math.abs(m.err_p95_min) < 8 ? "à l'heure prévue" : `${nf(Math.abs(m.err_p95_min))} min ${m.err_p95_min < 0 ? "plus tard" : "plus tôt"} que prévu`}`; });
+    const lines = sel.map(p => { const m = bt.points[p.key].m; return `${esc(disp(p))} : pic ${m.err_pic >= 0 ? "surestimé" : "sous-estimé"} de ${nf(Math.abs(m.err_pic))} coureurs, heure du pic ${m.err_heure_pic_min === 0 ? "exacte" : `décalée de ${nf(Math.abs(m.err_heure_pic_min))} min`}, 95 % des coureurs passés ${m.err_p95_min == null ? "" : Math.abs(m.err_p95_min) < 8 ? "à l'heure prévue" : `${nf(Math.abs(m.err_p95_min))} min ${m.err_p95_min < 0 ? "plus tard" : "plus tôt"} que prévu`}`; });
     $("#rav-test").innerHTML = `Pour ce test, le nombre de partants est fixé à la valeur réelle (${nf(bt.n_reel)}), comme si les inscriptions étaient connues ; la tendance seule en aurait prévu ${nf(bt.n_tendance)}. ${lines.join(". ")}.`;
-  } else $("#rav-test").textContent = "Cliquez sur un point pour l'afficher ou le masquer. ● = ravitaillement déclaré dans LiveTrail.";
+  } else $("#rav-test").textContent = "Cliquez sur un point pour l'afficher ou le masquer ; survolez le graphique pour lire le créneau et le nombre de coureurs. ● = ravitaillement déclaré dans LiveTrail.";
 
   /* tableau */
   const hEds = R.history.filter(h => !h.exclue).slice(-3);
@@ -500,7 +591,13 @@ function renderRavitos() {
         + `<td>${fmtT(pr.p95)}</td><td>${fmtT(pr.dernier)}<span class="sub">au plus tard ${fmtT(pr.dernier_p90)}</span></td><td>${p.cutoff != null ? fmtT(p.cutoff) : "-"}</td>`
         + `<td class="n nowrap">${rav ? `${nf(pr.n[1] * WATER)} L<span class="sub">${nf(pr.n[1] * SOLID)} kg</span>` : "-"}</td><td class="n">${rav ? volunteers(h.perH) : "-"}</td></tr>`; }).join("");
 }
-$("#rav-chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; const k = b.dataset.k; ravSel.has(k) && ravSel.size > 1 ? ravSel.delete(k) : ravSel.add(k); renderRavitos(); });
+$("#rav-chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; const k = b.dataset.k; ravSel.has(k) ? ravSel.delete(k) : ravSel.add(k); renderRavitos(); });
+document.querySelector(".selbar").addEventListener("click", e => {
+  const a = e.target.closest("button")?.dataset.a; if (!a) return;
+  const avail = P().filter(p => ravMode === "pred" ? pred(p.key) : R.backtest.points[p.key]);
+  ravSel = new Set(a === "none" ? [] : avail.filter(p => a === "all" || isRav(p)).map(p => p.key)); renderRavitos();
+});
+attachTip("#rav-chart", "rav");
 $("#rav-mode").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; ravMode = b.dataset.m; renderRavitos(); });
 
 /* ============================================================
@@ -524,10 +621,10 @@ function renderPertes() {
     s += `<rect x="${x}" y="${Y(r.ordered)}" width="${w * .3}" height="${190 - Y(r.ordered)}" fill="${css("--muted")}" opacity=".45"/>`
       + `<rect x="${x}" y="${Y(r.wasted)}" width="${w * .3}" height="${190 - Y(r.wasted)}" fill="${css("--alert")}"/>`
       + `<rect x="${x + w * .34}" y="${Y(r.reco)}" width="${w * .3}" height="${190 - Y(r.reco)}" fill="${css("--pine")}"/>`
-      + `<text class="svgtext" x="${x + w * .32}" y="208" text-anchor="middle">${esc(r.p.short.slice(0, 11))}</text>`; });
+      + `<text class="svgtext" x="${x + w * .32}" y="208" text-anchor="middle">${esc(disp(r.p).slice(0, 12))}</text>`; });
   $("#waste-chart").innerHTML = s + `<line x1="20" x2="470" y1="190" y2="190" stroke="${css("--rule")}"/></svg>`;
   $("#waste-table").innerHTML = `<tr><th>Ravito</th><th class="n">Commandé N-1</th><th class="n">Jeté N-1</th><th class="n">Recommandé</th></tr>`
-    + rows.map(r => `<tr><td><b>${esc(r.p.short)}</b></td><td class="n">${nf(r.ordered)} kg</td><td class="n"><span class="tag bad">${nf(r.wasted)} kg</span></td><td class="n"><b>${nf(r.reco)} kg</b></td></tr>`).join("");
+    + rows.map(r => `<tr><td><b>${esc(disp(r.p))}</b></td><td class="n">${nf(r.ordered)} kg</td><td class="n"><span class="tag bad">${nf(r.wasted)} kg</span></td><td class="n"><b>${nf(r.reco)} kg</b></td></tr>`).join("");
 }
 $("#margin").addEventListener("input", renderPertes);
 
@@ -555,7 +652,7 @@ function renderNavettes() {
   $("#nav-chart").innerHTML = s + `<line x1="40" x2="940" y1="190" y2="190" stroke="${css("--rule")}"/></svg>`;
   const eds = R.history.filter(h => !h.exclue).slice(-3);
   const keys = ["depart", ...P().filter(p => p.key !== "arrivee").map(p => p.key)];
-  $("#nav-table").innerHTML = `<tr><th>Dernier point pointé</th><th class="n">Km</th><th class="n">Prévu ${D.cible}</th>${eds.map(h => `<th class="n">${h.edition}</th>`).join("")}<th>Accès</th></tr>`
+  $("#nav-table").innerHTML = `<tr><th>Dernier point pointé</th><th class="n">Km</th><th class="n">Prévu ${R.ev.cible}</th>${eds.map(h => `<th class="n">${h.edition}</th>`).join("")}<th>Accès</th></tr>`
     + keys.map(k => { const p = P().find(x => x.key === k), pv = R.pred.abandons_point[k] || 0, hv = eds.map(h => h.lieux_abandon[k] || 0);
       if (pv < .5 && hv.every(v => !v)) return "";
       return `<tr><td><b>${k === "depart" ? "Entre le départ et le premier point" : esc(p.name)}</b></td><td class="n">${p ? p.km.toLocaleString("fr-FR") : 0}</td><td class="n"><b>${nf(pv)}</b></td>${hv.map(v => `<td class="n">${v}</td>`).join("")}<td class="note">à renseigner</td></tr>`; }).join("");
@@ -602,6 +699,24 @@ function setupDirect() {
   const le = lastEd();
   $("#live-sub").innerHTML = `Rejeu de l'édition ${R.ref} (${dateFr(le.date)}) avec les vrais temps de passage, sur l'horaire de départ choisi. Le jour J, la même vue se mettrait à jour avec le chronométrage en direct.`;
 }
+function liveCallouts(st, bins, bw, mx) {
+  if (!st.pos.length) return "";
+  const { KM } = scales(), hOf = i => bins[i] / mx * 120;
+  const iHead = bins.reduce((a, v, i) => v ? i : a, 0), iTail = bins.findIndex(v => v > 0), iPel = bins.indexOf(Math.max(...bins));
+  const lead = Math.max(...st.pos), tail = Math.min(...st.pos);
+  const marks = [];
+  marks.push({ i:iPel, title:"Peloton", sub:`${nf(bins[iPel])} coureurs vers le km ${nf(iPel * bw + bw / 2)}`, lvl:0 });
+  if (iHead !== iPel) marks.push({ i:iHead, title:"Tête de course", sub:`km ${(lead).toLocaleString("fr-FR", { maximumFractionDigits:1 })}`, lvl:1 });
+  if (iTail !== iPel && iTail !== iHead && st.pos.length > 5) marks.push({ i:iTail, title:"Derniers coureurs", sub:`km ${(tail).toLocaleString("fr-FR", { maximumFractionDigits:1 })}`, lvl:2 });
+  /* étiquettes dans le bandeau au-dessus du profil, sur des lignes distinctes, reliées à leur barre */
+  marks.sort((a, b) => a.i - b.i).forEach((m, k) => m.row = k);
+  return marks.map(m => {
+    const x = KM(m.i * bw + bw / 2), top = 238 - hOf(m.i), ly = -78 + m.row * 30;
+    const anchor = x > 820 ? "end" : x < 160 ? "start" : "middle";
+    return `<line x1="${x}" y1="${top - 3}" x2="${x}" y2="${ly + 8}" stroke="${css("--ink")}" stroke-width="1" stroke-dasharray="3 2" opacity=".7"/><circle cx="${x}" cy="${top - 3}" r="3" fill="${css("--ink")}"/>`
+      + `<text class="callout" x="${x}" y="${ly}" text-anchor="${anchor}">${m.title} <tspan class="callout-sub">${m.sub}</tspan></text>`;
+  }).join("");
+}
 function renderDirect() {
   const t = +$("#clock").value; $("#clock-out").innerHTML = fmtT(t);
   const st = replayState(t), n = R.replay.runners.length, finT = R.replay.runners.filter(r => r[0] === 0).map(r => r[1].at(-2));
@@ -611,7 +726,7 @@ function renderDirect() {
   const bins = Array(nb).fill(0); st.pos.forEach(k => bins[Math.min(nb - 1, Math.floor(k / bw))]++);
   const mx = Math.max(10, ...bins);
   let ex = ""; bins.forEach((v, i) => { if (!v) return; const x = KM(i * bw), w = KM((i + 1) * bw) - x - 1, h = v / mx * 120; ex += `<rect x="${x}" y="${238 - h}" width="${w}" height="${h}" fill="${css("--mark")}" opacity=".85"/>`; });
-  $("#live-profile").innerHTML = profileSVG(ex, "Position des coureurs sur le profil") + pointMarks(true) + "</svg>";
+  $("#live-profile").innerHTML = profileSVG(ex, "Position des coureurs sur le profil").replace('viewBox="0 0 980 275"', 'viewBox="0 -96 980 371"') + pointMarks(true) + liveCallouts(st, bins, bw, mx) + "</svg>";
   const cps = P().filter(p => p.cutoff != null);
   $("#cutoffs").innerHTML = cps.length ? `<tr><th>Point</th><th>Fermeture</th><th>Statut</th><th class="n">Passés après</th></tr>` + cps.map(p => {
       const late = realPassages(p.key).filter(x => x > p.cutoff + 1 / 60 && x <= t).length, closed = t >= p.cutoff, soon = !closed && p.cutoff - t <= .5;
@@ -619,10 +734,10 @@ function renderDirect() {
     : `<tr><td class="note">Aucune barrière horaire déclarée pour cette course.</td></tr>`;
   const ev = [{ t:0, m:`Départ de ${nf(n)} coureurs` }];
   P().forEach(p => { const ps = realPassages(p.key); if (!ps.length) return;
-    ev.push({ t:ps[0], m:p.key === "arrivee" ? "Premier coureur à l'arrivée" : `Premier coureur à ${esc(p.short)}` });
-    if (p.key !== "arrivee" && ps.length > 20) ev.push({ t:ps[Math.floor(ps.length * .5)], m:`La moitié du peloton est passée à ${esc(p.short)}` });
-    ev.push({ t:ps.at(-1), m:`${p.key === "arrivee" ? "Dernier finisher" : `Dernier coureur pointé à ${esc(p.short)}`}` });
-    if (p.cutoff != null) ev.push({ t:p.cutoff, m:`Barrière de ${esc(p.short)}` }); });
+    ev.push({ t:ps[0], m:p.key === "arrivee" ? "Premier coureur à l'arrivée" : `Premier coureur à ${esc(disp(p))}` });
+    if (p.key !== "arrivee" && ps.length > 20) ev.push({ t:ps[Math.floor(ps.length * .5)], m:`La moitié du peloton est passée à ${esc(disp(p))}` });
+    ev.push({ t:ps.at(-1), m:`${p.key === "arrivee" ? "Dernier finisher" : `Dernier coureur pointé à ${esc(disp(p))}`}` });
+    if (p.cutoff != null) ev.push({ t:p.cutoff, m:`Barrière de ${esc(disp(p))}` }); });
   $("#log").innerHTML = ev.filter(e => e.t <= t).sort((a, b) => b.t - a.t).slice(0, 40).map(e => `<li><time>${fmtT(e.t)}</time>${e.m}</li>`).join("") || `<li class="note">La course n'a pas commencé.</li>`;
 }
 $("#clock").addEventListener("input", renderDirect);
@@ -638,35 +753,70 @@ $("#play").addEventListener("click", () => {
 /* ============================================================
    NAVIGATION : #vue/course
    ============================================================ */
-$("#race-sel").innerHTML = D.races.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join("");
-function selectRace(id) {
-  R = D.races.find(r => r.id === id) || D.races[0];
-  START = startByRace[R.id] ?? R.start_clock;
-  $("#race-sel").value = R.id;
+const LOGOS = {};                    // ← logos autorisés, ex. { grp:"logos/grp.png", montcalm:"logos/montcalm.png" }
+function logoHTML(ev, big) {
+  const ini = ev.name.split(/\s+/).filter(w => w.length > 2 && !/^(des?|du|la|le)$/i.test(w)).map(w => w[0]).join("").slice(0, 3).toUpperCase();
+  return `<span class="logo${big ? " lg" : ""}" aria-hidden="true">${LOGOS[ev.id] ? `<img src="${LOGOS[ev.id]}" alt="">` : `<span>${ini}</span>`}</span>`;
+}
+$("#race-sel").innerHTML = EVENTS.map(ev => `<optgroup label="${esc(ev.name)}">${ev.races.map(r => `<option value="${r.uid}">${esc(r.name)}</option>`).join("")}</optgroup>`).join("");
+function renderHome() {
+  $("#events").innerHTML = EVENTS.map(ev => {
+    const runners = ev.races.reduce((a, r) => a + r.history.reduce((b, h) => b + h.partants, 0), 0);
+    const eds = [...new Set(ev.races.flatMap(r => r.history.map(h => h.edition)))].sort();
+    return `<article class="event"><header>${logoHTML(ev, true)}<div><h2>${esc(ev.name)}</h2><div class="where">${esc(ev.place)}</div></div></header>
+      <div class="next"><b>Prochaine édition : ${esc(ev.next)}</b><span>${esc(ev.next_note)}</span></div>
+      <div class="races">${[...ev.races].sort((a, b) => b.distance - a.distance).map(r => `<a class="race-tag" href="#apercu/${r.uid}"><b>${esc(r.name)}</b><span>${r.distance.toLocaleString("fr-FR", { maximumFractionDigits:1 })} km, ${nf(r.dplus)} m D+</span><span>≈ ${nf(r.model.n_pred)} partants attendus</span></a>`).join("")}</div>
+      <p class="ev-stats">${ev.races.length} courses, éditions ${eds[0]} à ${eds.at(-1)}, ${nf(runners)} participations analysées.</p></article>`;
+  }).join("");
+  $("#home-note").textContent = "Données issues des résultats publiés sur LiveTrail, anonymisées. Prévisions indicatives, à confronter à l'expérience de chaque organisation.";
+}
+function selectRace(uid) {
+  R = RACES.find(r => r.uid === uid) || RACES[0];
+  START = startByRace[R.uid] ?? R.start_clock;
+  $("#race-sel").value = R.uid;
   const H = Math.floor(START), M = Math.round((START - H) * 60);
   $("#start-time").value = `${String(H % 24).padStart(2, "0")}:${String(M).padStart(2, "0")}`;
-  $("#race-meta").textContent = `${R.distance.toLocaleString("fr-FR")} km, ${nf(R.dplus)} m D+`;
+  $("#race-meta").textContent = `${R.distance.toLocaleString("fr-FR", { maximumFractionDigits:1 })} km, ${nf(R.dplus)} m D+`;
+  $("#ev-name").textContent = R.ev.name;
+  $("#ev-logo").outerHTML = logoHTML(R.ev).replace('class="logo"', 'class="logo" id="ev-logo"');
   $("#badge").textContent = `Données réelles ${R.history[0].edition}-${R.history.at(-1).edition}`;
   ravSel = null; if (timer) $("#play").click();
   setupDirect(); renderAll();
 }
-function renderAll() { renderApercu(); renderPrep(); renderRavitos(); renderPertes(); renderNavettes(); renderMeteo(); renderDirect(); }
+function renderAll() { renderHome(); renderApercu(); renderPrep(); renderRavitos(); renderPertes(); renderNavettes(); renderMeteo(); renderDirect(); }
 function route() {
-  const [v, r] = (location.hash || "#apercu").slice(1).split("/");
-  view = document.querySelector(`[data-view="${v}"]`) ? v : "apercu";
-  if (r && (!R || r !== R.id)) selectRace(r);
+  const [v, r] = (location.hash || "#accueil").slice(1).split("/");
+  view = document.querySelector(`[data-view="${v}"]`) ? v : "accueil";
+  if (r && (!R || r !== R.uid)) selectRace(r);
+  document.body.classList.toggle("on-home", view === "accueil");
   document.querySelectorAll("[data-view]").forEach(s => s.hidden = s.dataset.view !== view);
-  document.querySelectorAll(".side a").forEach(a => { a.hash.slice(1).split("/")[0] === view ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); a.href = `#${a.hash.slice(1).split("/")[0]}/${R.id}`; });
+  document.querySelectorAll(".side a").forEach(a => {
+    const v0 = a.getAttribute("href").slice(1).split("/")[0];
+    v0 === view ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current");
+    a.setAttribute("href", v0 === "accueil" ? "#accueil" : `#${v0}/${R.uid}`);
+  });
   window.scrollTo(0, 0);
 }
-$("#race-sel").addEventListener("change", e => { location.hash = `${view}/${e.target.value}`; });
+$("#race-sel").addEventListener("change", e => { location.hash = `${view === "accueil" ? "apercu" : view}/${e.target.value}`; });
 $("#start-time").addEventListener("change", e => {
   const [h, m] = e.target.value.split(":").map(Number); if (isNaN(h)) return;
-  START = h + m / 60; if (START < R.start_clock - 12) START += 24; startByRace[R.id] = START; renderAll();
+  START = h + m / 60; if (START < R.start_clock - 12) START += 24; startByRace[R.uid] = START; renderAll();
 });
+/* thème clair / sombre */
+const store = { get:k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set:(k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const SUN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`;
+const MOON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>`;
+const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+function paintThemeBtn() { const l = isDark() ? "Passer en mode clair" : "Passer en mode sombre"; $("#theme").innerHTML = isDark() ? SUN : MOON; $("#theme").setAttribute("aria-label", l); $("#theme").title = l; }
+const saved = store.get("cairn-theme"); if (saved) document.documentElement.dataset.theme = saved;
+$("#theme").addEventListener("click", () => { const t = isDark() ? "light" : "dark"; document.documentElement.dataset.theme = t; store.set("cairn-theme", t); paintThemeBtn(); renderAll(); });
+/* contact */
+$("#contact").href = CONTACT_EMAIL ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Cairn : prise de contact")}` : LINKEDIN;
+if (!CONTACT_EMAIL) { $("#contact").target = "_blank"; $("#contact").rel = "noopener"; }
 addEventListener("hashchange", route);
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
-selectRace(((location.hash.split("/")[1]) || "marath"));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { paintThemeBtn(); renderAll(); });
+paintThemeBtn();
+selectRace((location.hash.split("/")[1]) || RACES[0].uid);
 route();
 </script>
 </body>
