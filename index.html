@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cairn | Prototype d'aide à la décision pour organisateurs de trail</title>
-<meta name="description" content="Cairn, prototype d'outil d'aide à la décision pour les organisateurs de trail : ravitaillements, pertes alimentaires, navettes, scénarios météo et suivi de course.">
+<title>Cairn | Challenge du Montcalm</title>
+<meta name="description" content="Cairn, prototype d'aide à la décision pour les organisateurs de trail, appliqué aux données réelles du Challenge du Montcalm : affluence prévue aux ravitaillements, barrières horaires, rapatriements et rejeu des éditions passées.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Cairn, l'aide à la décision pour les organisateurs de trail">
-<meta property="og:description" content="Prototype : ravitaillements, pertes alimentaires, navettes, scénarios météo et suivi de course en direct. Données fictives.">
+<meta property="og:description" content="Prototype appliqué au Challenge du Montcalm : affluence prévue aux ravitaillements, barrières horaires, rapatriements, rejeu des éditions passées.">
 <meta property="og:image" content="https://paullefrais.github.io/cairn/apercu.png">
 <meta property="og:url" content="https://paullefrais.github.io/cairn/">
 <meta name="twitter:card" content="summary_large_image">
@@ -139,6 +139,29 @@ svg{display:block; width:100%; height:auto}
   .g3,.g2{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:no-preference){.plan,.chip{transition:background .15s, border-color .15s}}
+/* Ajouts : sélection de course, bandeaux, graphiques à bande */
+.picker{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.picker select{font:600 1.05rem var(--head); color:var(--ink); background:var(--paper); border:1px solid var(--rule); border-radius:6px; padding:6px 30px 6px 10px; appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%); background-position:calc(100% - 15px) 55%,calc(100% - 10px) 55%; background-size:5px 5px; background-repeat:no-repeat}
+.picker .meta{color:var(--muted); font-size:.9rem}
+.real{font-size:.82rem; padding:3px 10px; border-radius:99px; background:var(--pine-soft); color:var(--ink); border:1px solid var(--pine)}
+.start{display:inline-flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted)}
+.start input{font:600 1rem var(--head); border:1px solid var(--rule); border-radius:6px; padding:4px 6px; background:var(--card); color:var(--ink)}
+.banner{border:1px dashed var(--mark); background:var(--mark-soft); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.93rem}
+.seg{display:inline-flex; border:1px solid var(--rule); border-radius:99px; overflow:hidden; margin-bottom:14px}
+.seg button{border:none; background:var(--card); padding:6px 14px; cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--card)}
+.sub{color:var(--muted); font-size:.85rem; display:block}
+.hist{font-size:.82rem; color:var(--muted); white-space:nowrap}
+details.method{margin-top:16px}
+details.method summary{cursor:pointer; font:600 1.05rem var(--head)}
+details.method p, details.method li{color:var(--muted); font-size:.93rem; max-width:80ch}
+.kpi-sub{color:var(--muted); font-size:.85rem; margin-top:2px}
+td.c, th.c{text-align:center}
+#rav-table td:first-child{min-width:170px}
+@media (max-width:900px){ .layout{grid-template-columns:minmax(0,1fr)} .top{padding:10px 16px} .picker select{max-width:100%} }
+#rav-table td, #rav-table th{padding:8px 7px}
+.nowrap{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -153,10 +176,14 @@ svg{display:block; width:100%; height:auto}
     </svg>
     Cairn
   </div>
-  <div class="race"><strong id="race-name"></strong><span id="race-meta"></span></div>
+  <div class="picker">
+    <label for="race-sel" class="race"><span>Challenge du Montcalm</span></label>
+    <select id="race-sel" aria-label="Course"></select>
+    <span class="meta" id="race-meta"></span>
+  </div>
   <div class="spacer"></div>
-  <span class="countdown" id="countdown"></span>
-  <span class="fake">Prototype, données fictives</span>
+  <label class="start">Départ prévu <input type="time" id="start-time" step="300"></label>
+  <span class="real" id="badge"></span>
 </header>
 
 <div class="layout">
@@ -165,7 +192,7 @@ svg{display:block; width:100%; height:auto}
     <a href="#apercu"><span class="dot"></span>Vue d'ensemble</a>
     <a href="#ravitos"><span class="dot"></span>Ravitaillements</a>
     <a href="#pertes"><span class="dot"></span>Pertes alimentaires</a>
-    <a href="#navettes"><span class="dot"></span>Navettes</a>
+    <a href="#navettes"><span class="dot"></span>Navettes et rapatriements</a>
     <a href="#meteo"><span class="dot"></span>Scénarios météo</a>
     <div class="group">Jour J</div>
     <a href="#direct"><span class="dot"></span>Course en direct</a>
@@ -173,65 +200,72 @@ svg{display:block; width:100%; height:auto}
 
   <main>
     <!-- ================= VUE D'ENSEMBLE ================= -->
-    <section id="v-apercu" data-view="apercu">
-      <div class="view-head"><h1>Vue d'ensemble</h1><p>Ce qu'il faut savoir sur l'édition, et les points qui demandent une décision.</p></div>
+    <section data-view="apercu">
+      <div class="view-head"><h1 id="ov-title">Vue d'ensemble</h1><p id="ov-sub"></p></div>
       <div class="grid g4" id="kpis"></div>
-      <div class="panel mt"><h2>Profil du parcours et affluence aux ravitaillements</h2><div id="profile"></div>
-        <div class="legend"><span><i style="background:var(--mark)"></i>Pic d'affluence prévu</span><span><i style="background:var(--pine)"></i>Ravitaillement</span></div></div>
+      <div class="panel mt"><h2>Profil du parcours et affluence prévue</h2><div id="profile"></div>
+        <div class="legend"><span><i style="background:var(--mark)"></i>Pic d'affluence prévu (largeur proportionnelle)</span><span><i style="background:var(--pine)"></i>Ravitaillement</span><span><i style="background:var(--muted)"></i>Point de pointage</span></div></div>
       <div class="grid g2 mt">
         <div class="panel"><h2>À décider</h2><ul class="alerts" id="alerts"></ul></div>
         <div class="panel check"><h2>Préparation</h2><div class="bar"><i id="prep-bar"></i></div><p class="note" id="prep-txt"></p><div id="prep"></div></div>
       </div>
+      <div class="panel mt tbl"><h2>Éditions précédentes</h2><table id="hist-table"></table><p class="note" id="hist-note"></p></div>
+      <details class="method panel mt"><summary>D'où viennent ces chiffres ?</summary><div id="method"></div></details>
     </section>
 
     <!-- ================= RAVITAILLEMENTS ================= -->
-    <section id="v-ravitos" data-view="ravitos" hidden>
-      <div class="view-head"><h1>Ravitaillements</h1><p>Passages prévus à partir de la distribution des temps des éditions passées. Les quantités et les bénévoles en découlent.</p></div>
-      <div class="panel"><h2>Coureurs par demi-heure</h2><div class="chips" id="rav-chips"></div><div id="rav-chart"></div></div>
-      <div class="panel mt tbl"><h2>Besoins par ravitaillement</h2><table id="rav-table"></table>
-        <p class="note">Hypothèses : 0,6 L d'eau et 120 g de solide par coureur et par ravito, majorés de 30 % si la température dépasse 25 °C. Un bénévole pour 45 coureurs par heure au pic, plus deux.</p></div>
+    <section data-view="ravitos" hidden>
+      <div class="view-head"><h1>Ravitaillements et points de passage</h1><p>Coureurs attendus par quart d'heure à chaque point, avec la fourchette probable. Les quantités et les bénévoles en découlent.</p></div>
+      <div class="panel">
+        <div class="seg" role="group" aria-label="Mode" id="rav-mode"></div>
+        <h2 id="rav-chart-title"></h2>
+        <div class="chips" id="rav-chips"></div><div id="rav-chart"></div>
+        <div class="legend" id="rav-legend"></div>
+        <p class="note" id="rav-test"></p>
+      </div>
+      <div class="panel mt tbl"><h2>Besoins par point</h2><table id="rav-table"></table>
+        <p class="note">Hypothèses à valider avec l'organisation : 0,6 L d'eau et 120 g de solide par coureur et par ravitaillement ; un bénévole pour 45 coureurs par heure au pic, plus deux. La liste des ravitaillements provient des fiches LiveTrail, qui varient d'une année à l'autre.</p></div>
     </section>
 
     <!-- ================= PERTES ================= -->
-    <section id="v-pertes" data-view="pertes" hidden>
-      <div class="view-head"><h1>Pertes alimentaires</h1><p>Commander au plus juste : comparer ce qui a été jeté l'an dernier avec le besoin prévu cette année, selon la marge de sécurité choisie.</p></div>
+    <section data-view="pertes" hidden>
+      <div class="view-head"><h1>Pertes alimentaires</h1><p>Commander au plus juste : comparer ce qui a été jeté l'an dernier avec le besoin prévu, selon la marge de sécurité choisie.</p></div>
+      <div class="banner"><b>Onglet en attente.</b> Les passages prévus sont réels, mais les commandes et les pertes de l'an dernier sont fictives : il faudra les fichiers de commande de l'organisation.</div>
       <div class="grid g3" id="waste-kpis"></div>
       <div class="panel mt"><h2>Marge de sécurité sur le solide</h2>
         <div class="range"><input type="range" id="margin" min="0" max="40" step="5" value="15" aria-label="Marge de sécurité en pourcentage"><output id="margin-out">15 %</output></div>
         <p class="note">Au-delà de 20 %, le risque de rupture devient négligeable mais les pertes remontent.</p></div>
       <div class="grid g2 mt">
         <div class="panel"><h2>Solide par ravito, en kg</h2><div id="waste-chart"></div>
-          <div class="legend"><span><i style="background:var(--muted); opacity:.45"></i>Commandé l'an dernier</span><span><i style="background:var(--alert)"></i>Jeté l'an dernier</span><span><i style="background:var(--pine)"></i>Recommandé cette année</span></div></div>
+          <div class="legend"><span><i style="background:var(--muted); opacity:.45"></i>Commandé l'an dernier</span><span><i style="background:var(--alert)"></i>Jeté l'an dernier</span><span><i style="background:var(--pine)"></i>Recommandé</span></div></div>
         <div class="panel tbl"><h2>Détail</h2><table id="waste-table"></table></div>
       </div>
-      <div class="panel mt"><h2>Pistes pour réduire encore</h2><ul class="alerts">
-        <li><span class="ic g"></span><span>Réserver les produits frais aux premiers ravitos et basculer vers du sec en fin de course, quand le flux baisse.</span></li>
-        <li><span class="ic g"></span><span>Livrer les derniers ravitos en deux temps : une partie au départ, le complément selon les passages réels à R2.</span></li>
-        <li><span class="ic g"></span><span>Prévoir un partenaire local (épicerie solidaire, banque alimentaire) pour les invendus scellés.</span></li>
-      </ul></div>
     </section>
 
     <!-- ================= NAVETTES ================= -->
-    <section id="v-navettes" data-view="navettes" hidden>
-      <div class="view-head"><h1>Navettes</h1><p>Combien de véhicules, à quelle heure et où : aller vers le départ, rapatriement des abandons, retour des finishers.</p></div>
+    <section data-view="navettes" hidden>
+      <div class="view-head"><h1>Navettes et rapatriements</h1><p>Combien de places, à quelle heure et depuis où : aller vers le départ, rapatriement des abandons, retour des finishers.</p></div>
       <div class="grid g3" id="nav-kpis"></div>
-      <div class="panel mt"><h2>Places nécessaires par heure</h2><div id="nav-chart"></div>
-        <div class="legend"><span><i style="background:var(--pine)"></i>Retour des finishers</span><span><i style="background:var(--alert)"></i>Rapatriement des abandons</span></div></div>
-      <div class="panel mt tbl"><h2>Rapatriement depuis les ravitaillements</h2><table id="nav-table"></table></div>
+      <div class="panel mt"><h2>Personnes à transporter par heure</h2><div id="nav-chart"></div>
+        <div class="legend"><span><i style="background:var(--pine)"></i>Retour des finishers (part qui prend la navette)</span><span><i style="background:var(--alert)"></i>Rapatriement des abandons</span></div>
+        <p class="note">L'heure d'un abandon est approchée par le dernier pointage du coureur : le besoin réel arrive un peu plus tard, le temps de rejoindre le point d'évacuation.</p></div>
+      <div class="panel mt tbl"><h2>Où ont lieu les abandons</h2><table id="nav-table"></table>
+        <p class="note">Un coureur est compté au dernier point où il a été pointé. Les accès et moyens d'évacuation sont à renseigner avec l'organisation.</p></div>
     </section>
 
     <!-- ================= METEO ================= -->
-    <section id="v-meteo" data-view="meteo" hidden>
+    <section data-view="meteo" hidden>
       <div class="view-head"><h1>Scénarios météo</h1><p>Le plan actif est choisi selon les prévisions sur les heures où le gros du peloton est en altitude (encadré pointillé).</p></div>
+      <div class="banner"><b>Onglet en attente.</b> Prévisions et plans fictifs, à construire avec l'organisation. Piste concrète : en 2026, le Marathon et le PICaPICA ont été répartis sur plusieurs parcours raccourcis le jour J.</div>
       <div class="panel"><h2>Prévision du jour J</h2><div class="chips" id="wx-chips"></div><div class="hours" id="hours"></div><p class="note">Pour chaque heure : température, vent en crête, risque d'orage.</p></div>
       <div class="grid g3 mt" id="plans"></div>
     </section>
 
     <!-- ================= DIRECT ================= -->
-    <section id="v-direct" data-view="direct" hidden>
-      <div class="view-head"><h1>Course en direct</h1><p>Simulation : faites avancer l'horloge pour voir où se trouve le peloton. Avec le chronométrage réel, cette vue se mettrait à jour toute seule.</p></div>
-      <div class="panel"><div class="clock"><output id="clock-out">7h00</output>
-        <input type="range" id="clock" min="390" max="1110" step="5" value="420" aria-label="Heure de la course">
+    <section data-view="direct" hidden>
+      <div class="view-head"><h1>Course en direct</h1><p id="live-sub"></p></div>
+      <div class="panel"><div class="clock"><output id="clock-out"></output>
+        <input type="range" id="clock" step="0.0833" aria-label="Heure de la course">
         <button class="btn" id="play" type="button">Lancer</button></div></div>
       <div class="grid g4 mt" id="live-kpis"></div>
       <div class="panel mt"><h2>Répartition du peloton sur le parcours</h2><div id="live-profile"></div></div>
@@ -243,237 +277,397 @@ svg{display:block; width:100%; height:auto}
   </main>
 </div>
 
+<script src="data/montcalm.js"></script>
 <script>
 /* ============================================================
-   DONNÉES FICTIVES : à remplacer par les vraies données d'une course
+   DONNÉES : window.CAIRN_DATA (data/montcalm.js), généré par build_montcalm.py
    ============================================================ */
-const RACE = { name:"Trail des Trois Cols", date:new Date(2027,5,12), dateTxt:"Samedi 12 juin 2027",
-  km:42, dplus:2800, entrants:650, start:7, finishCutoff:18, place:"Ariège (course fictive)" };
-const RAVITOS = [
-  { id:"R1", name:"Orri de la Coume",     km:9,  alt:1380, cutoff:9.75,  access:"Piste 4x4", vehicle:"minibus 8 places", trip:"40 min" },
-  { id:"R2", name:"Col de Rabassole",     km:19, alt:1960, cutoff:12.5,  access:"Aucun accès routier", vehicle:"redescente encadrée vers R3", trip:"1h15 à pied" },
-  { id:"R3", name:"Refuge de l'Estagnol", km:29, alt:1720, cutoff:15,    access:"Route forestière", vehicle:"minibus 8 places", trip:"35 min" },
-  { id:"R4", name:"Pla de Montaut",       km:37, alt:1050, cutoff:16.5,  access:"Route", vehicle:"bus 50 places", trip:"20 min" }
-];
-const PROFILE = [[0,620],[4,900],[9,1380],[13,1700],[19,1960],[22,1650],[25,1900],[29,1720],[33,1300],[37,1050],[42,640]];
-const LAST_YEAR = { orderedFactor:[1.42,1.55,1.48,1.62], wastePct:[22,31,27,35] }; // édition précédente
-const SHUTTLE_SHARE = 0.55, BUS = 50;
+const D = window.CAIRN_DATA;
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf = n => Math.round(n).toLocaleString("fr-FR");
+const stat = (v, l, warn, sub) => `<div class="panel stat${warn ? " warn" : ""}"><div class="v">${v}</div><div class="l">${l}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ""}</div>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const WATER = .6, SOLID = .12, PER_VOL = 45, SHUTTLE_SHARE = .55, BUS = 50;
+
+let R = null, START = 0, view = "apercu";
+const startByRace = {};
+
+/* Heures : t = heures depuis le départ ; clock(t) = heure de la journée (peut dépasser 24) */
+const clock = t => START + t;
+function fmt(h, withDay = true) {
+  const tot = Math.round(h * 60), d = Math.floor(tot / 1440), m = ((tot % 1440) + 1440) % 1440;
+  return `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}${withDay && d > 0 ? ` <small>(J+${d})</small>` : ""}`;
+}
+const fmtT = t => fmt(clock(t));
+const dur = h => { const m = Math.round(h * 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`; };
+const dateFr = s => new Date(s + "T12:00").toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
+
+/* ============================================================
+   CALCULS DÉRIVÉS
+   ============================================================ */
+const P = () => R.points;
+const pred = k => R.pred.points[k];
+const label = p => p.key === "arrivee" ? "Arrivée" : p.name;
+const isRav = p => p.ravito;
+function series(pr, key = "p50", step = R.pred.step) { return pr[key].map((v, i) => [(pr.i0 + i) * step, v]); }
+function perHourPeak(pr) {            // pic horaire = meilleure somme de 4 quarts d'heure consécutifs
+  let best = 0, at = 0; const a = pr.p50;
+  for (let i = 0; i < a.length; i++) { let s = 0; for (let j = i; j < Math.min(a.length, i + 4); j++) s += a[j]; if (s > best) { best = s; at = (pr.i0 + i) * R.pred.step; } }
+  return { perH:best, at };
+}
+const volunteers = perH => Math.max(3, Math.ceil(perH / PER_VOL) + 2);
+const lastEd = () => R.history.find(h => h.edition === R.ref);
+
+/* Rejeu : position d'un coureur à l'instant t (km) ou null s'il est sorti / arrivé */
+function replayState(t) {
+  let onc = 0, arr = 0, out = 0; const pos = [];
+  for (const [st, tr] of R.replay.runners) {
+    const n = tr.length / 2, tLast = tr[(n - 1) * 2];
+    if (t >= tLast) { if (st === 0) arr++; else out++; continue; }
+    let k = 0;
+    for (let i = 1; i < n; i++) { const t0 = tr[(i - 1) * 2], t1 = tr[i * 2]; if (t <= t1) { k = tr[(i - 1) * 2 + 1] + (tr[i * 2 + 1] - tr[(i - 1) * 2 + 1]) * (t1 > t0 ? (t - t0) / (t1 - t0) : 1); break; } }
+    onc++; pos.push(k);
+  }
+  return { onc, arr, out, pos };
+}
+function realPassages(key) {          // heures de passage réelles (rejeu) à un point
+  const km = P().find(p => p.key === key).km, out = [];
+  for (const [, tr] of R.replay.runners) for (let i = 1; i < tr.length / 2; i++) if (Math.abs(tr[i * 2 + 1] - km) < 1e-6) { out.push(tr[i * 2]); break; }
+  return out.sort((a, b) => a - b);
+}
+
+/* ============================================================
+   PROFIL
+   ============================================================ */
+function scales() {
+  const pr = R.profile, maxK = Math.max(R.distance, pr.at(-1)[0], P().at(-1).km);
+  const alts = pr.map(p => p[1]).concat(P().map(p => p.alt));
+  const lo = Math.floor((Math.min(...alts) - 100) / 250) * 250, hi = Math.ceil((Math.max(...alts) + 150) / 250) * 250;
+  return { KM:k => 40 + (k / maxK) * 900, ALT:a => 240 - (a - lo) / (hi - lo) * 200, lo, hi, maxK };
+}
+function profileSVG(extra = "", label = "Profil d'altitude du parcours") {
+  const { KM, ALT, lo, hi, maxK } = scales();
+  const d = R.profile.map(([k, a], i) => `${i ? "L" : "M"}${KM(k).toFixed(1)} ${ALT(a).toFixed(1)}`).join(" ");
+  let s = `<svg viewBox="0 0 980 275" role="img" aria-label="${label}">`;
+  const stepA = (hi - lo) > 1500 ? 500 : 250;
+  for (let a = lo + stepA; a < hi; a += stepA) s += `<line x1="40" x2="940" y1="${ALT(a)}" y2="${ALT(a)}" stroke="${css("--rule")}" stroke-dasharray="2 4"/><text class="svgtext" x="34" y="${ALT(a) + 4}" text-anchor="end">${a}</text>`;
+  s += `<path d="${d} L${KM(R.profile.at(-1)[0])} 240 L40 240 Z" fill="${css("--pine-soft")}"/>` + extra + `<path d="${d}" fill="none" stroke="${css("--ink")}" stroke-width="2" stroke-linejoin="round"/>`;
+  s += `<line x1="40" x2="940" y1="240" y2="240" stroke="${css("--rule")}"/>`;
+  const stepK = maxK > 60 ? 20 : maxK > 20 ? 10 : maxK > 8 ? 2 : 1;
+  for (let k = 0; k <= maxK + .01; k += stepK) s += `<text class="svgtext" x="${KM(k)}" y="258" text-anchor="middle">${k} km</text>`;
+  return s;
+}
+function pointMarks(withLabels, onlyRav) {
+  const { KM, ALT } = scales(); let s = ""; let lastX = -99, row = 0;
+  P().forEach(p => {
+    if (onlyRav && !isRav(p)) return;
+    const x = KM(p.km), y = ALT(p.alt);
+    s += `<circle cx="${x}" cy="${y}" r="${isRav(p) ? 5.5 : 3.5}" fill="${css(isRav(p) ? "--pine" : "--muted")}" stroke="${css("--card")}" stroke-width="2"/>`;
+    if (withLabels) { row = x - lastX < 70 ? (row + 1) % 3 : 0; lastX = x; s += `<text class="svglabel" x="${x}" y="${y - 12 - row * 14}" text-anchor="middle">${esc(p.short)}</text>`; }
+  });
+  return s;
+}
+
+/* ============================================================
+   VUE D'ENSEMBLE
+   ============================================================ */
+function busiest() {
+  return P().filter(p => p.key !== "arrivee" && pred(p.key)).map(p => ({ p, pr:pred(p.key), h:perHourPeak(pred(p.key)) }))
+    .sort((a, b) => b.pr.pic[1] - a.pr.pic[1])[0];
+}
+function renderApercu() {
+  const n = R.pred.n, start = pred(P()[0].key) ? pred(P()[0].key).n : n, arr = pred("arrivee"), b = busiest(), le = lastEd();
+  $("#ov-title").textContent = `${R.name} : préparer l'édition ${D.cible}`;
+  $("#ov-sub").textContent = `Prévisions tirées des éditions ${R.model.valides.join(", ")} (LiveTrail). Départ de ${R.start_place}, ${R.distance.toLocaleString("fr-FR")} km et ${nf(R.dplus)} m D+.`;
+  $("#kpis").innerHTML =
+      stat(nf(R.model.n_pred), "partants attendus", false, `fourchette ${nf(R.model.n_pred - 1.28 * R.model.n_sd)} à ${nf(R.model.n_pred + 1.28 * R.model.n_sd)} ; ${nf(le.partants)} en ${R.ref}`)
+    + stat(`${Math.round(R.model.p_dnf * 100)} %`, "d'abandons et hors délai", R.model.p_dnf > .2, `soit environ ${nf(R.model.n_pred - n[1])} coureurs à rapatrier`)
+    + (b ? stat(`${nf(b.pr.pic[1])}`, `coureurs en 15 min au pic, ${esc(b.p.short)}`, false, `vers ${fmtT(b.pr.heure_pic)} ; ${nf(b.h.perH)} sur l'heure la plus chargée`)
+         : stat(`${nf(arr.pic[1])}`, "arrivées en 15 min au pic", false, `vers ${fmtT(arr.heure_pic)}`))
+    + stat(fmtT(arr.dernier_p90), "fermeture conseillée de l'arrivée", false, `dernier finisher prévu vers ${fmtT(arr.dernier)} (médiane)`);
+
+  /* profil + bulles d'affluence */
+  const { KM } = scales(); let ex = "";
+  const maxPk = Math.max(...P().map(p => pred(p.key) ? pred(p.key).pic[1] : 0));
+  P().forEach(p => { const pr = pred(p.key); if (!pr) return; const w = 6 + 34 * pr.pic[1] / maxPk; ex += `<rect x="${KM(p.km) - w / 2}" y="20" width="${w}" height="220" fill="${css("--mark")}" opacity=".26"/>`; });
+  $("#profile").innerHTML = profileSVG(ex) + pointMarks(true) + "</svg>";
+
+  /* points à décider */
+  const items = [];
+  if (b) items.push({ c:"", t:`<b>${esc(b.p.name)}</b> est le point le plus chargé : jusqu'à ${nf(b.pr.pic[1])} coureurs par quart d'heure vers ${fmtT(b.pr.heure_pic)} (entre ${nf(b.pr.pic[0])} et ${nf(b.pr.pic[2])} selon les années). S'il s'agit d'un ravitaillement, prévoir ${volunteers(b.h.perH)} bénévoles sur ce créneau.` });
+  P().filter(p => p.cutoff != null).forEach(p => {
+    const pr = pred(p.key), real = realPassages(p.key).filter(t => t > p.cutoff + 1 / 60).length, hd = le.hors_delai;
+    items.push({ c:real > 0 || (pr && pr.apres_barriere > 0) ? "r" : "g",
+      t:`Barrière de <b>${esc(p.name)}</b> à ${fmtT(p.cutoff)} : ${pr && pr.apres_barriere ? `environ ${nf(pr.apres_barriere)} coureur${pr.apres_barriere >= 1.5 ? "s" : ""} prévu${pr.apres_barriere >= 1.5 ? "s" : ""} après l'heure.` : "aucun coureur prévu après l'heure."}`
+        + (real > 0 ? ` En ${R.ref}, ${real} coureurs y sont passés après la barrière (${hd} classés hors délai sur toute la course) : barrière appliquée ou heure à mettre à jour dans LiveTrail ?` : "") });
+  });
+  R.history.filter(h => h.note).forEach(h => items.push({ c:"r", t:`<b>Édition ${h.edition}</b> : ${esc(h.note)}` }));
+  if (Math.abs(START - R.start_clock) > .01) items.push({ c:"", t:`Départ réglé à ${fmt(START)} au lieu de ${fmt(R.start_clock)} en ${R.ref} : toutes les heures sont décalées d'autant (sans tenir compte d'un effet chaleur ou nuit).` });
+  items.push({ c:"g", t:`Ravitaillements repris des fiches LiveTrail, où les déclarations changent d'une année à l'autre : ${P().filter(isRav).length} points sur ${P().length} retenus. Liste et horaires d'ouverture à valider avec l'organisation.` });
+  $("#alerts").innerHTML = items.map(i => `<li><span class="ic ${i.c}"></span><span>${i.t}</span></li>`).join("");
+
+  /* historique */
+  $("#hist-table").innerHTML = `<tr><th>Édition</th><th>Départ</th><th class="n">Partants</th><th class="n">Finishers</th><th class="n">Abandons</th><th class="n">Hors délai</th><th class="n">Vainqueur</th><th class="n">Temps médian</th><th class="n">Dernier</th><th></th></tr>`
+    + R.history.map(h => `<tr><td><b>${h.edition}</b><span class="sub">${dateFr(h.date)}</span></td><td>${fmt(h.depart)}</td><td class="n">${nf(h.partants)}</td><td class="n">${nf(h.finishers)}</td><td class="n">${nf(h.abandons)}</td><td class="n">${nf(h.hors_delai)}</td>`
+      + `<td class="n">${h.premier ? dur(h.premier) : "-"}</td><td class="n">${h.median ? dur(h.median) : "-"}</td><td class="n">${h.dernier ? dur(h.dernier) : "-"}</td>`
+      + `<td>${h.exclue ? `<span class="tag bad">écartée</span>` : `<span class="tag ok">utilisée</span>`}</td></tr>`).join("");
+  $("#hist-note").textContent = R.history.some(h => h.note) ? "Les chiffres d'une édition éclatée en plusieurs parcours ne portent que sur le parcours officiel, sauf la colonne Partants." : "";
+  const bt = R.backtest;
+  $("#method").innerHTML = `<p><b>Source.</b> Temps de passage publiés sur LiveTrail pour les éditions ${R.history.map(h => h.edition).join(", ")}, extraits le ${D.source.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? ""} et anonymisés : aucun nom n'est conservé, un identifiant haché permet seulement de reconnaître un même coureur d'une année à l'autre.</p>
+    <p><b>Modèle.</b> Le temps de chaque coureur est décomposé en un niveau personnel et un effet de l'édition (météo, terrain), estimé grâce aux coureurs qui reviennent d'une année sur l'autre (effets estimés : ${Object.entries(R.model.e_fact).map(([e, v]) => `${e} ${v >= 0 ? "+" : ""}${Math.round(v * 100)} %`).join(", ")}, par rapport à la dernière édition). La répartition des temps entre les points dépend du niveau. On simule ensuite 1 000 éditions ${D.cible} pour obtenir une fourchette (P10 à P90) à chaque point. Les éditions récentes pèsent davantage, et une édition tronquée ou éclatée est écartée.</p>
+    ${bt ? `<p><b>Test.</b> Le même modèle, entraîné sur ${bt.train.join(" et ")} seulement, a prédit l'édition ${bt.edition} : voir l'onglet Ravitaillements, mode « Test ».</p>` : ""}
+    <p><b>Limites.</b> Le nombre de partants suit la tendance des dernières années (à remplacer par les inscrits réels dès qu'ils sont connus). Les abandons sont placés au dernier point pointé. Les quantités et le nombre de bénévoles reposent sur des ratios à valider.</p>`;
+}
+const PREP = ["Autorisations préfecture et mairies", "Convention avec les secours en montagne", "Commande des ravitaillements", "Réservation des navettes", "Planning des bénévoles", "Balisage du parcours (J-2)", "Briefing sécurité (J-1)"];
+const prepDone = new Set([0, 1]);
+function renderPrep() {
+  $("#prep").innerHTML = PREP.map((p, i) => `<label><input type="checkbox" data-i="${i}" ${prepDone.has(i) ? "checked" : ""}> ${p}</label>`).join("");
+  $("#prep-bar").style.width = Math.round(prepDone.size / PREP.length * 100) + "%"; $("#prep-txt").textContent = `${prepDone.size} étapes sur ${PREP.length} terminées (liste d'exemple)`;
+}
+$("#prep").addEventListener("change", e => { const i = +e.target.dataset.i; e.target.checked ? prepDone.add(i) : prepDone.delete(i); renderPrep(); });
+
+/* ============================================================
+   RAVITAILLEMENTS
+   ============================================================ */
+let ravMode = "pred", ravSel = null;
+const COLS = () => [css("--pine"), css("--mark"), css("--alert"), "#4C6FB0", "#8E5BA8", css("--muted")];
+function bandChart(items, opts = {}) {
+  /* items : [{name, color, band:[[t,lo,hi]], line:[[t,v]], real:[[t,v]]}] ; t en heures depuis le départ */
+  const pts = items.flatMap(it => [...it.band.map(b => b[0]), ...(it.real || []).map(r => r[0])]);
+  if (!pts.length) return "";
+  let t0 = Math.min(...pts), t1 = Math.max(...pts) + R.pred.step;
+  const maxV = Math.max(5, ...items.flatMap(it => [...it.band.map(b => b[2]), ...(it.real || []).map(r => r[1])]));
+  const X = t => 56 + (t - t0) / (t1 - t0) * 880, Y = v => 210 - v / maxV * 180;
+  let s = `<svg viewBox="0 0 960 245" role="img" aria-label="${opts.aria || "Coureurs par quart d'heure"}">`;
+  const nice = maxV > 200 ? 50 : maxV > 80 ? 20 : maxV > 30 ? 10 : 5;
+  for (let v = 0; v <= maxV; v += nice) s += `<line x1="56" x2="936" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--rule")}" stroke-dasharray="2 4"/><text class="svgtext" x="50" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  const span = t1 - t0, hs = span > 30 ? 4 : span > 14 ? 2 : span > 4 ? 1 : .5;
+  for (let h = Math.ceil(clock(t0) / hs) * hs; h <= clock(t1); h += hs) s += `<text class="svgtext" x="${X(h - START)}" y="232" text-anchor="middle">${fmt(h, false)}</text>`;
+  const step = R.pred.step;
+  items.forEach(it => {
+    if (it.band.length) {
+      const up = it.band.map(([t, , hi], i) => `${i ? "L" : "M"}${X(t).toFixed(1)} ${Y(hi).toFixed(1)} L${X(t + step).toFixed(1)} ${Y(hi).toFixed(1)}`).join(" ");
+      const dn = [...it.band].reverse().map(([t, lo]) => `L${X(t + step).toFixed(1)} ${Y(lo).toFixed(1)} L${X(t).toFixed(1)} ${Y(lo).toFixed(1)}`).join(" ");
+      s += `<path d="${up} ${dn} Z" fill="${it.color}" opacity=".16"/>`;
+      s += `<path d="${it.line.map(([t, v], i) => `${i ? "L" : "M"}${X(t).toFixed(1)} ${Y(v).toFixed(1)} L${X(t + step).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${it.color}" stroke-width="${it.real ? 1.6 : 2.4}" ${it.real ? 'stroke-dasharray="5 3"' : ""}/>`;
+    }
+    if (it.real) s += `<path d="${it.real.map(([t, v], i) => `${i ? "L" : "M"}${X(t).toFixed(1)} ${Y(v).toFixed(1)} L${X(t + step).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${it.color}" stroke-width="2.6"/>`;
+    const top = (it.real && it.real.length ? it.real : it.line).reduce((a, b) => b[1] > a[1] ? b : a, [0, -1]);
+    if (top[1] > 0) s += `<text class="svglabel" x="${X(top[0] + step / 2)}" y="${Y(top[1]) - 8}" text-anchor="middle">${esc(it.name)}</text>`;
+  });
+  return s + `<line x1="56" x2="936" y1="210" y2="210" stroke="${css("--rule")}"/></svg>`;
+}
+function defaultSel() {
+  const cand = P().filter(p => p.key !== "arrivee" && pred(p.key));
+  const rav = cand.filter(isRav); const base = (rav.length ? rav : cand);
+  if (!base.length) return new Set(["arrivee"]);
+  return new Set(base.slice(0, 4).map(p => p.key));
+}
+function renderRavitos() {
+  const bt = R.backtest;
+  if (ravMode === "test" && !bt) ravMode = "pred";
+  $("#rav-mode").innerHTML = `<button type="button" data-m="pred" aria-pressed="${ravMode === "pred"}">Prévision ${D.cible}</button>`
+    + (bt ? `<button type="button" data-m="test" aria-pressed="${ravMode === "test"}">Test : ${bt.edition} prévu contre réel</button>` : "");
+  const avail = P().filter(p => ravMode === "pred" ? pred(p.key) : bt.points[p.key]);
+  if (!ravSel || ![...ravSel].some(k => avail.find(p => p.key === k))) ravSel = defaultSel();
+  $("#rav-chips").innerHTML = avail.map(p => `<button class="chip" type="button" data-k="${p.key}" aria-pressed="${ravSel.has(p.key)}">${isRav(p) ? "● " : ""}${esc(p.short)}</button>`).join("");
+  const cols = COLS(); const sel = avail.filter(p => ravSel.has(p.key));
+  const items = sel.map((p, i) => {
+    const src = ravMode === "pred" ? pred(p.key) : bt.points[p.key];
+    const band = src.p90.map((hi, j) => [(src.i0 + j) * R.pred.step, src.p10[j], hi]);
+    const it = { name:p.short, color:cols[i % cols.length], band, line:series(src) };
+    if (ravMode === "test") it.real = src.reel.map((v, j) => [(src.i0 + j) * R.pred.step, v]);
+    return it;
+  });
+  $("#rav-chart-title").textContent = ravMode === "pred" ? `Coureurs attendus par quart d'heure en ${D.cible}` : `Édition ${bt.edition} : prévision faite avec ${bt.train.join(" et ")}, comparée au réel`;
+  $("#rav-chart").innerHTML = bandChart(items);
+  $("#rav-legend").innerHTML = ravMode === "pred"
+    ? `<span><i style="background:${css("--ink")}"></i>Médiane prévue</span><span><i style="background:${css("--ink")}; opacity:.2; height:10px"></i>Fourchette probable (8 éditions sur 10)</span>`
+    : `<span><i style="background:${css("--ink")}"></i>Réel</span><span><i style="background:${css("--ink")}; opacity:.5"></i>Prévu (pointillés) et sa fourchette</span>`;
+  if (ravMode === "test") {
+    const lines = sel.map(p => { const m = bt.points[p.key].m; return `${esc(p.short)} : pic ${m.err_pic >= 0 ? "surestimé" : "sous-estimé"} de ${nf(Math.abs(m.err_pic))} coureurs, heure du pic ${m.err_heure_pic_min === 0 ? "exacte" : `décalée de ${nf(Math.abs(m.err_heure_pic_min))} min`}, 95 % des coureurs passés ${m.err_p95_min == null ? "" : Math.abs(m.err_p95_min) < 8 ? "à l'heure prévue" : `${nf(Math.abs(m.err_p95_min))} min ${m.err_p95_min < 0 ? "plus tard" : "plus tôt"} que prévu`}`; });
+    $("#rav-test").innerHTML = `Pour ce test, le nombre de partants est fixé à la valeur réelle (${nf(bt.n_reel)}), comme si les inscriptions étaient connues ; la tendance seule en aurait prévu ${nf(bt.n_tendance)}. ${lines.join(". ")}.`;
+  } else $("#rav-test").textContent = "Cliquez sur un point pour l'afficher ou le masquer. ● = ravitaillement déclaré dans LiveTrail.";
+
+  /* tableau */
+  const hEds = R.history.filter(h => !h.exclue).slice(-3);
+  $("#rav-table").innerHTML = `<tr><th>Point</th><th class="n">Km</th><th class="n">Passages</th><th>Premier</th><th>Pic par 15 min</th><th class="nowrap">Pic réel ${hEds.map(h => "'" + String(h.edition).slice(2)).join(" · ")}</th><th>95 % passés</th><th>Dernier</th><th>Barrière</th><th class="n">Eau et solide</th><th class="n">Bénévoles</th></tr>`
+    + P().filter(p => pred(p.key)).map(p => { const pr = pred(p.key), h = perHourPeak(pr), rav = isRav(p);
+      const real = hEds.map(e => e.pics[p.key] ? e.pics[p.key][0] : "-").join(" · ");
+      return `<tr><td>${rav ? `<span class="tag ok">ravito</span> ` : ""}<b>${esc(label(p))}</b><span class="sub">${nf(p.alt)} m</span></td><td class="n">${p.km.toLocaleString("fr-FR")}</td><td class="n">${nf(pr.n[1])}<span class="sub">${nf(pr.n[0])} à ${nf(pr.n[2])}</span></td>`
+        + `<td>${fmtT(pr.premier)}</td><td><span class="tag peak">${nf(pr.pic[1])} vers ${fmtT(pr.heure_pic)}</span><span class="sub">${nf(pr.pic[0])} à ${nf(pr.pic[2])} ; ${nf(h.perH)}/h</span></td><td class="hist">${real}</td>`
+        + `<td>${fmtT(pr.p95)}</td><td>${fmtT(pr.dernier)}<span class="sub">au plus tard ${fmtT(pr.dernier_p90)}</span></td><td>${p.cutoff != null ? fmtT(p.cutoff) : "-"}</td>`
+        + `<td class="n nowrap">${rav ? `${nf(pr.n[1] * WATER)} L<span class="sub">${nf(pr.n[1] * SOLID)} kg</span>` : "-"}</td><td class="n">${rav ? volunteers(h.perH) : "-"}</td></tr>`; }).join("");
+}
+$("#rav-chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; const k = b.dataset.k; ravSel.has(k) && ravSel.size > 1 ? ravSel.delete(k) : ravSel.add(k); renderRavitos(); });
+$("#rav-mode").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; ravMode = b.dataset.m; renderRavitos(); });
+
+/* ============================================================
+   PERTES (commandes fictives, passages réels)
+   ============================================================ */
+const FAKE_FACTOR = [1.42, 1.55, 1.48, 1.62, 1.38, 1.5], FAKE_WASTE = [22, 31, 27, 35, 24, 29];
+function wasteRows(m) {
+  const rav = P().filter(p => isRav(p) && p.key !== "arrivee" && pred(p.key)).slice(0, 6);
+  return rav.map((p, i) => { const need = pred(p.key).n[1] * SOLID, ordered = need * FAKE_FACTOR[i], wasted = ordered * FAKE_WASTE[i] / 100, reco = need * (1 + m / 100);
+    return { p, need, ordered, wasted, reco }; });
+}
+function renderPertes() {
+  const m = +$("#margin").value; $("#margin-out").textContent = m + " %";
+  const rows = wasteRows(m);
+  if (!rows.length) { $("#waste-kpis").innerHTML = `<p class="note">Aucun ravitaillement intermédiaire déclaré pour cette course.</p>`; $("#waste-chart").innerHTML = $("#waste-table").innerHTML = ""; return; }
+  const tO = rows.reduce((a, r) => a + r.ordered, 0), tW = rows.reduce((a, r) => a + r.wasted, 0), tR = rows.reduce((a, r) => a + r.reco, 0);
+  $("#waste-kpis").innerHTML = stat(`${nf(tW)} kg`, "jetés l'an dernier (fictif)", true) + stat(`${nf(tR)} kg`, `à commander avec ${m} % de marge`) + stat(`${Math.round((1 - tR / tO) * 100)} %`, "de volume commandé en moins");
+  const max = Math.max(...rows.map(r => r.ordered)), Y = v => 190 - v / max * 160, w = 440 / rows.length;
+  let s = `<svg viewBox="0 0 480 225" role="img" aria-label="Solide commandé, jeté et recommandé par ravitaillement">`;
+  rows.forEach((r, i) => { const x = 30 + i * w;
+    s += `<rect x="${x}" y="${Y(r.ordered)}" width="${w * .3}" height="${190 - Y(r.ordered)}" fill="${css("--muted")}" opacity=".45"/>`
+      + `<rect x="${x}" y="${Y(r.wasted)}" width="${w * .3}" height="${190 - Y(r.wasted)}" fill="${css("--alert")}"/>`
+      + `<rect x="${x + w * .34}" y="${Y(r.reco)}" width="${w * .3}" height="${190 - Y(r.reco)}" fill="${css("--pine")}"/>`
+      + `<text class="svgtext" x="${x + w * .32}" y="208" text-anchor="middle">${esc(r.p.short.slice(0, 11))}</text>`; });
+  $("#waste-chart").innerHTML = s + `<line x1="20" x2="470" y1="190" y2="190" stroke="${css("--rule")}"/></svg>`;
+  $("#waste-table").innerHTML = `<tr><th>Ravito</th><th class="n">Commandé N-1</th><th class="n">Jeté N-1</th><th class="n">Recommandé</th></tr>`
+    + rows.map(r => `<tr><td><b>${esc(r.p.short)}</b></td><td class="n">${nf(r.ordered)} kg</td><td class="n"><span class="tag bad">${nf(r.wasted)} kg</span></td><td class="n"><b>${nf(r.reco)} kg</b></td></tr>`).join("");
+}
+$("#margin").addEventListener("input", renderPertes);
+
+/* ============================================================
+   NAVETTES ET RAPATRIEMENTS
+   ============================================================ */
+function renderNavettes() {
+  const H = R.pred.horaire, n = R.model.n_pred, morning = Math.ceil(n * SHUTTLE_SHARE), buses = Math.ceil(morning / BUS);
+  const fin = H.arrivees.map(v => v * SHUTTLE_SHARE), ab = H.abandons;
+  const tot = fin.map((v, i) => v + (ab[i] || 0));
+  const nz = tot.map((v, i) => v >= .5 ? i : -1).filter(i => i >= 0);
+  const i0 = nz.length ? nz[0] : 0, i1 = nz.length ? nz.at(-1) : 0;
+  const peakI = tot.indexOf(Math.max(...tot)), abTot = ab.reduce((a, b) => a + b, 0);
+  $("#nav-kpis").innerHTML = stat(`${buses} bus`, `aller vers le départ`, false, `${nf(morning)} coureurs si ${Math.round(SHUTTLE_SHARE * 100)} % prennent la navette (hypothèse)`)
+    + stat(nf(abTot), "coureurs à rapatrier en cours de course", abTot > 50, `dont ${nf(Math.max(...Object.values(R.pred.abandons_point)))} depuis le point le plus touché`)
+    + stat(`${nf(tot[peakI])}`, "personnes au pic de retour", false, `entre ${fmt(clock(peakI), false)} et ${fmt(clock(peakI + 1), false)}, soit ${Math.ceil(tot[peakI] / BUS)} bus`);
+  const hrs = []; for (let i = i0; i <= i1; i++) hrs.push(i);
+  const max = Math.max(1, ...hrs.map(i => tot[i])), Y = v => 190 - v / max * 160, w = Math.min(70, 880 / hrs.length);
+  let s = `<svg viewBox="0 0 960 230" role="img" aria-label="Personnes à transporter par heure">`;
+  hrs.forEach((i, j) => { const x = 50 + j * w, f = fin[i], a = ab[i] || 0;
+    s += `<rect x="${x}" y="${Y(f)}" width="${w * .7}" height="${190 - Y(f)}" fill="${css("--pine")}"/>`
+      + `<rect x="${x}" y="${Y(f + a)}" width="${w * .7}" height="${Y(f) - Y(f + a)}" fill="${css("--alert")}"/>`
+      + (j % Math.max(1, Math.ceil(hrs.length / 14)) === 0 ? `<text class="svgtext" x="${x + w * .35}" y="208" text-anchor="middle">${fmt(clock(i), false).replace("h00", "h")}</text>` : "")
+      + (f + a >= 1 && hrs.length < 28 ? `<text class="svglabel" x="${x + w * .35}" y="${Y(f + a) - 6}" text-anchor="middle">${nf(f + a)}</text>` : ""); });
+  $("#nav-chart").innerHTML = s + `<line x1="40" x2="940" y1="190" y2="190" stroke="${css("--rule")}"/></svg>`;
+  const eds = R.history.filter(h => !h.exclue).slice(-3);
+  const keys = ["depart", ...P().filter(p => p.key !== "arrivee").map(p => p.key)];
+  $("#nav-table").innerHTML = `<tr><th>Dernier point pointé</th><th class="n">Km</th><th class="n">Prévu ${D.cible}</th>${eds.map(h => `<th class="n">${h.edition}</th>`).join("")}<th>Accès</th></tr>`
+    + keys.map(k => { const p = P().find(x => x.key === k), pv = R.pred.abandons_point[k] || 0, hv = eds.map(h => h.lieux_abandon[k] || 0);
+      if (pv < .5 && hv.every(v => !v)) return "";
+      return `<tr><td><b>${k === "depart" ? "Entre le départ et le premier point" : esc(p.name)}</b></td><td class="n">${p ? p.km.toLocaleString("fr-FR") : 0}</td><td class="n"><b>${nf(pv)}</b></td>${hv.map(v => `<td class="n">${v}</td>`).join("")}<td class="note">à renseigner</td></tr>`; }).join("");
+}
+
+/* ============================================================
+   MÉTÉO (exemple fictif, inchangé)
+   ============================================================ */
 const WEATHER = {
   beau:  { label:"Beau temps",        temp:[8,9,11,14,17,19,21,23,24,24,23,21,19], wind:[10,10,12,15,15,18,20,20,18,15,12,10,10], storm:[0,0,0,0,5,5,10,10,10,5,5,0,0] },
   orage: { label:"Orage l'après-midi", temp:[10,11,13,16,19,22,24,25,24,21,19,17,16], wind:[10,10,12,15,20,25,30,40,45,35,25,15,10], storm:[0,0,5,5,10,20,35,55,70,60,40,20,10] },
   vent:  { label:"Vent fort en crête", temp:[5,6,7,8,10,11,12,12,12,11,10,9,8], wind:[30,40,55,70,80,85,80,70,60,50,45,40,35], storm:[0,0,0,5,5,5,5,5,5,0,0,0,0] }
 };
 let wxKey = "orage";
-
-/* ============================================================
-   SIMULATION DES COUREURS (graine fixe : résultats reproductibles)
-   ============================================================ */
-const rng = (s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(7);
-const CP = [...RAVITOS.map(r => ({ km:r.km, cutoff:r.cutoff })), { km:RACE.km, cutoff:RACE.finishCutoff }];
-const runners = [];
-for (let i = 0; i < RACE.entrants; i++) {
-  const u = (rng() + rng() + rng()) / 3;
-  const dur = 4.7 + 6.2 * Math.pow(u, 1.25);
-  let quit = null; if (rng() < 0.08) { const r = rng(); quit = r < .15 ? 0 : r < .5 ? 1 : r < .85 ? 2 : 3; }
-  const r = { dur, pass:[], stop:null };
-  for (let k = 0; k < CP.length; k++) {
-    const t = RACE.start + dur * CP[k].km / RACE.km;
-    if (t > CP[k].cutoff) { r.stop = { type:"hd", idx:k, time:CP[k].cutoff }; break; }
-    r.pass.push(t);
-    if (quit === k) { r.stop = { type:"ab", idx:k, time:t + .1 }; break; }
-  }
-  runners.push(r);
-}
-const passages = RAVITOS.map((_, k) => runners.filter(r => r.pass.length > k).map(r => r.pass[k]));
-const finishers = runners.filter(r => r.pass.length === CP.length).map(r => r.pass[CP.length - 1]);
-const BIN0 = 7, BIN1 = 18.5, STEP = .5, NB = (BIN1 - BIN0) / STEP;
-const hist = arr => { const h = Array(NB).fill(0); arr.forEach(t => { const i = Math.floor((t - BIN0) / STEP); if (i >= 0 && i < NB) h[i]++; }); return h; };
-const H = passages.map(hist);
-const peak = H.map(h => { const m = Math.max(...h); const i = h.indexOf(m); return { perH:m * 2, from:BIN0 + i * STEP }; });
-
-/* ============================================================
-   OUTILS
-   ============================================================ */
-const $ = s => document.querySelector(s);
-const fmt = h => { let H = Math.floor(h), M = Math.round((h - H) * 60); if (M === 60) { H++; M = 0; } return `${H}h${String(M).padStart(2, "0")}`; };
-const nf = n => Math.round(n).toLocaleString("fr-FR");
-const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const wx = () => WEATHER[wxKey];
-const heat = () => Math.max(...wx().temp) > 25 ? 1.3 : 1;
-const stat = (v, l, warn) => `<div class="panel stat${warn ? " warn" : ""}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
-const KM = k => 40 + (k / RACE.km) * 900, ALT = a => 230 - (a - 500) / 1600 * 190;
-function profileSVG(extra = "") {
-  const d = PROFILE.map(([k, a], i) => `${i ? "L" : "M"}${KM(k)} ${ALT(a)}`).join(" ");
-  let s = `<svg viewBox="0 0 980 270" role="img" aria-label="Profil d'altitude du parcours">`;
-  [800, 1200, 1600, 2000].forEach(a => s += `<line x1="40" x2="940" y1="${ALT(a)}" y2="${ALT(a)}" stroke="${css("--rule")}" stroke-dasharray="2 4"/><text class="svgtext" x="34" y="${ALT(a) + 4}" text-anchor="end">${a}</text>`);
-  s += `<path d="${d} L940 240 L40 240 Z" fill="${css("--pine-soft")}"/>` + extra + `<path d="${d}" fill="none" stroke="${css("--ink")}" stroke-width="2.2" stroke-linejoin="round"/>`;
-  s += `<line x1="40" x2="940" y1="240" y2="240" stroke="${css("--rule")}"/>`;
-  [0, 10, 20, 30, 42].forEach(k => s += `<text class="svgtext" x="${KM(k)}" y="258" text-anchor="middle">${k} km</text>`);
-  return s;
-}
-const altAt = k => { for (let i = 1; i < PROFILE.length; i++) { const [k0, a0] = PROFILE[i - 1], [k1, a1] = PROFILE[i]; if (k <= k1) return a0 + (a1 - a0) * (k - k0) / (k1 - k0); } return PROFILE.at(-1)[1]; };
-
-/* Plan météo actif : fenêtre où le gros du peloton est entre R2 et R3 */
+const PLANS = {
+  A:{ title:"Plan A, parcours normal", items:["Parcours complet", "Barrières horaires standard", "Contrôle matériel obligatoire au départ"] },
+  B:{ title:"Plan B, orage", items:["Neutralisation de la partie en crête", "Parcours de repli par la vallée", "Fermeture avancée des ravitos d'altitude", "Abris prévus aux refuges"] },
+  C:{ title:"Plan C, vent fort ou neige", items:["Parcours bas sans passage en crête", "Suppression des ravitos d'altitude", "Départ décalé", "Couverture de survie et coupe-vent obligatoires"] }
+};
 function activePlan() {
-  const w = wx(), win = [10, 11, 12, 13, 14, 15].map(h => h - 6);
+  const w = WEATHER[wxKey], win = [4, 5, 6, 7, 8, 9];
   const storm = Math.max(...win.map(i => w.storm[i])), wind = Math.max(...win.map(i => w.wind[i]));
   if (wind >= 70) return { key:"C", why:`rafales jusqu'à ${wind} km/h en crête entre 10h et 15h` };
   if (storm >= 40) return { key:"B", why:`risque d'orage de ${storm} % entre 10h et 15h` };
   return { key:"A", why:"aucun seuil dépassé sur la fenêtre en altitude" };
 }
-
-/* ============================================================
-   VUES
-   ============================================================ */
-function renderApercu() {
-  const ab = runners.filter(r => r.stop).length, plan = activePlan(), pk = peak.reduce((a, p, i) => p.perH > a.perH ? { ...p, i } : a, { perH:0 });
-  $("#kpis").innerHTML = stat(nf(RACE.entrants), "inscrits") + stat(nf(ab), "abandons et mises hors course estimés")
-    + stat(`${pk.perH}/h`, `pic au ${RAVITOS[pk.i].id}, ${fmt(pk.from)}-${fmt(pk.from + .5)}`) + stat(`Plan ${plan.key}`, "scénario météo actif", plan.key !== "A");
-  let ex = "";
-  RAVITOS.forEach((r, i) => { const w = 18 + peak[i].perH / 6; ex += `<rect x="${KM(r.km) - w / 2}" y="20" width="${w}" height="220" fill="${css("--mark")}" opacity=".28"/>`; });
-  let s = profileSVG(ex);
-  RAVITOS.forEach((r, i) => { const x = KM(r.km), y = ALT(r.alt); s += `<circle cx="${x}" cy="${y}" r="6" fill="${css("--pine")}" stroke="${css("--card")}" stroke-width="2"/><text class="svglabel" x="${x}" y="${y - 14}" text-anchor="middle">${r.id} ${r.name}</text><text class="svgtext" x="${x}" y="${y - 28}" text-anchor="middle">${peak[i].perH} coureurs/h au pic</text>`; });
-  $("#profile").innerHTML = s + "</svg>";
-  const nb = RAVITOS.map((_, i) => runners.filter(r => r.stop && r.stop.idx === i).length);
-  const items = [
-    { c:plan.key === "A" ? "g" : "r", t:`Météo : plan ${plan.key} recommandé, ${plan.why}. Décision à confirmer la veille à 18h.` },
-    { c:"", t:`${RAVITOS[pk.i].id} ${RAVITOS[pk.i].name} : prévoir ${Math.max(3, Math.ceil(pk.perH / 45) + 2)} bénévoles pour le pic de ${fmt(pk.from)}.` },
-    { c:nb[1] > 15 ? "r" : "", t:`R2 sans accès routier : ${nb[1]} coureurs à faire redescendre vers R3, prévoir deux serre-files.` },
-    { c:"g", t:`Commande de solide : ${nf(wasteRows(15).reduce((a, r) => a + r.saved, 0))} kg de moins que l'an dernier avec une marge de 15 %.` }
-  ];
-  $("#alerts").innerHTML = items.map(i => `<li><span class="ic ${i.c}"></span><span>${i.t}</span></li>`).join("");
-}
-const PREP = ["Autorisations préfecture et mairies", "Convention avec les secours en montagne", "Commande des ravitaillements", "Réservation des navettes", "Planning des bénévoles", "Balisage du parcours (J-2)", "Briefing sécurité (J-1)"];
-const prepDone = new Set([0, 1, 2]);
-function renderPrep() {
-  $("#prep").innerHTML = PREP.map((p, i) => `<label><input type="checkbox" data-i="${i}" ${prepDone.has(i) ? "checked" : ""}> ${p}</label>`).join("");
-  const pct = Math.round(prepDone.size / PREP.length * 100);
-  $("#prep-bar").style.width = pct + "%"; $("#prep-txt").textContent = `${prepDone.size} étapes sur ${PREP.length} terminées`;
-}
-$("#prep").addEventListener("change", e => { const i = +e.target.dataset.i; e.target.checked ? prepDone.add(i) : prepDone.delete(i); renderPrep(); });
-
-let ravSel = new Set([0, 1, 2, 3]);
-function renderRavitos() {
-  $("#rav-chips").innerHTML = RAVITOS.map((r, i) => `<button class="chip" type="button" data-i="${i}" aria-pressed="${ravSel.has(i)}">${r.id} ${r.name}</button>`).join("");
-  const max = Math.max(...H.flat()), X = i => 50 + i / (NB - 1) * 880, Y = v => 200 - v / max * 170;
-  const cols = [css("--pine"), css("--mark"), css("--alert"), css("--muted")];
-  let s = `<svg viewBox="0 0 960 240" role="img" aria-label="Coureurs par demi-heure à chaque ravitaillement">`;
-  [0, .5, 1].forEach(f => s += `<line x1="50" x2="930" y1="${Y(max * f)}" y2="${Y(max * f)}" stroke="${css("--rule")}" stroke-dasharray="2 4"/><text class="svgtext" x="44" y="${Y(max * f) + 4}" text-anchor="end">${Math.round(max * f)}</text>`);
-  for (let h = 7; h <= 18; h++) s += `<text class="svgtext" x="${X((h - BIN0) / STEP)}" y="222" text-anchor="middle">${h}h</text>`;
-  H.forEach((h, i) => { if (!ravSel.has(i)) return; s += `<path d="${h.map((v, j) => `${j ? "L" : "M"}${X(j)} ${Y(v)}`).join(" ")}" fill="none" stroke="${cols[i]}" stroke-width="2.5"/><text class="svglabel" x="${X(h.indexOf(Math.max(...h)))}" y="${Y(Math.max(...h)) - 8}" text-anchor="middle">${RAVITOS[i].id}</text>`; });
-  $("#rav-chart").innerHTML = s + "</svg>";
-  $("#rav-table").innerHTML = `<tr><th>Ravito</th><th class="n">Km</th><th>Ouverture</th><th>Fermeture</th><th class="n">Passages</th><th>Pic</th><th class="n">Eau</th><th class="n">Solide</th><th class="n">Bénévoles</th></tr>`
-    + RAVITOS.map((r, i) => { const p = passages[i]; return `<tr><td><b>${r.id}</b> ${r.name}</td><td class="n">${r.km}</td><td>${fmt(Math.min(...p) - .25)}</td><td>${fmt(r.cutoff)}</td><td class="n">${nf(p.length)}</td><td><span class="tag peak">${peak[i].perH}/h à ${fmt(peak[i].from)}</span></td><td class="n">${nf(p.length * .6 * heat())} L</td><td class="n">${nf(p.length * .12)} kg</td><td class="n">${Math.max(3, Math.ceil(peak[i].perH / 45) + 2)}</td></tr>`; }).join("");
-}
-$("#rav-chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; const i = +b.dataset.i; ravSel.has(i) && ravSel.size > 1 ? ravSel.delete(i) : ravSel.add(i); renderRavitos(); });
-
-function wasteRows(m) {
-  return RAVITOS.map((r, i) => { const need = passages[i].length * .12, ordered = need * LAST_YEAR.orderedFactor[i], wasted = ordered * LAST_YEAR.wastePct[i] / 100, reco = need * (1 + m / 100);
-    return { r, need, ordered, wasted, reco, saved:ordered - reco }; });
-}
-function renderPertes() {
-  const m = +$("#margin").value; $("#margin-out").textContent = m + " %";
-  const rows = wasteRows(m), tO = rows.reduce((a, r) => a + r.ordered, 0), tW = rows.reduce((a, r) => a + r.wasted, 0), tR = rows.reduce((a, r) => a + r.reco, 0);
-  $("#waste-kpis").innerHTML = stat(`${nf(tW)} kg`, "jetés l'an dernier", true) + stat(`${nf(tR)} kg`, `à commander cette année avec ${m} % de marge`) + stat(`${Math.round((1 - tR / tO) * 100)} %`, "de volume commandé en moins");
-  const max = Math.max(...rows.map(r => r.ordered)), Y = v => 190 - v / max * 160;
-  let s = `<svg viewBox="0 0 460 220" role="img" aria-label="Solide commandé, jeté et recommandé par ravitaillement">`;
-  rows.forEach((r, i) => { const x = 40 + i * 105;
-    s += `<rect x="${x}" y="${Y(r.ordered)}" width="26" height="${190 - Y(r.ordered)}" fill="${css("--muted")}" opacity=".45"/>`
-      + `<rect x="${x}" y="${Y(r.wasted)}" width="26" height="${190 - Y(r.wasted)}" fill="${css("--alert")}"/>`
-      + `<rect x="${x + 32}" y="${Y(r.reco)}" width="26" height="${190 - Y(r.reco)}" fill="${css("--pine")}"/>`
-      + `<text class="svglabel" x="${x + 29}" y="208" text-anchor="middle">${r.r.id}</text>`; });
-  $("#waste-chart").innerHTML = s + `<line x1="30" x2="450" y1="190" y2="190" stroke="${css("--rule")}"/></svg>`;
-  $("#waste-table").innerHTML = `<tr><th>Ravito</th><th class="n">Commandé N-1</th><th class="n">Jeté N-1</th><th class="n">Recommandé</th></tr>`
-    + rows.map(r => `<tr><td><b>${r.r.id}</b></td><td class="n">${nf(r.ordered)} kg</td><td class="n"><span class="tag bad">${nf(r.wasted)} kg</span></td><td class="n"><b>${nf(r.reco)} kg</b></td></tr>`).join("");
-}
-$("#margin").addEventListener("input", () => { renderPertes(); });
-
-function renderNavettes() {
-  const morning = Math.ceil(RACE.entrants * SHUTTLE_SHARE), buses = Math.ceil(morning / BUS);
-  const hours = []; for (let h = 9; h <= 19; h++) hours.push(h);
-  const fin = hours.map(h => Math.round(finishers.filter(t => t >= h && t < h + 1).length * SHUTTLE_SHARE));
-  const ab = hours.map(h => runners.filter(r => r.stop && r.stop.time >= h && r.stop.time < h + 1).length);
-  const peakSeats = Math.max(...fin.map((v, i) => v + ab[i]));
-  $("#nav-kpis").innerHTML = stat(`${buses} bus`, `aller vers le départ (${nf(morning)} coureurs, 5h45 à 6h30)`) + stat(nf(runners.filter(r => r.stop).length), "coureurs à rapatrier en cours de journée") + stat(`${Math.ceil(peakSeats / BUS)} bus`, `au pic de retour (${peakSeats} places dans l'heure)`);
-  const max = Math.max(...fin.map((v, i) => v + ab[i])), Y = v => 190 - v / max * 160;
-  let s = `<svg viewBox="0 0 960 225" role="img" aria-label="Places de navette nécessaires par heure">`;
-  hours.forEach((h, i) => { const x = 60 + i * 80;
-    s += `<rect x="${x}" y="${Y(fin[i])}" width="44" height="${190 - Y(fin[i])}" fill="${css("--pine")}"/>`
-      + `<rect x="${x}" y="${Y(fin[i] + ab[i])}" width="44" height="${Y(fin[i]) - Y(fin[i] + ab[i])}" fill="${css("--alert")}"/>`
-      + `<text class="svgtext" x="${x + 22}" y="208" text-anchor="middle">${h}h</text>`
-      + (fin[i] + ab[i] ? `<text class="svglabel" x="${x + 22}" y="${Y(fin[i] + ab[i]) - 6}" text-anchor="middle">${fin[i] + ab[i]}</text>` : ""); });
-  $("#nav-chart").innerHTML = s + "</svg>";
-  $("#nav-table").innerHTML = `<tr><th>Ravito</th><th>Accès</th><th>Moyen</th><th>Trajet</th><th class="n">Coureurs</th><th>Créneau le plus chargé</th></tr>`
-    + RAVITOS.map((r, i) => { const st = runners.filter(x => x.stop && x.stop.idx === i), hs = st.map(x => Math.floor(x.stop.time)), mode = hs.sort((a, b) => hs.filter(v => v === b).length - hs.filter(v => v === a).length)[0];
-      return `<tr><td><b>${r.id}</b> ${r.name}</td><td>${r.access}</td><td>${r.vehicle}</td><td>${r.trip}</td><td class="n">${st.length}</td><td>${st.length ? `${mode}h-${mode + 1}h` : "-"}</td></tr>`; }).join("");
-}
-
-const PLANS = {
-  A:{ title:"Plan A, parcours normal", items:["Parcours complet 42 km", "Barrières horaires standard", "Contrôle matériel obligatoire au départ"] },
-  B:{ title:"Plan B, orage", items:["Neutralisation de la crête entre R2 et R3", "Parcours de repli par la vallée (36 km)", "Fermeture de R2 avancée à 11h45", "Abris prévus à R3"] },
-  C:{ title:"Plan C, vent fort ou neige", items:["Parcours bas de 24 km sans passage en crête", "Suppression de R2", "Départ décalé à 8h00", "Couverture de survie et coupe-vent obligatoires"] }
-};
 function renderMeteo() {
   $("#wx-chips").innerHTML = Object.entries(WEATHER).map(([k, w]) => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === wxKey}">${w.label}</button>`).join("");
-  const w = wx();
+  const w = WEATHER[wxKey];
   $("#hours").innerHTML = w.temp.map((t, i) => { const h = i + 6, risk = w.storm[i] >= 40 || w.wind[i] >= 70 ? "risk" : (w.storm[i] >= 20 || w.wind[i] >= 45 ? "mid" : ""), race = h >= 10 && h <= 15 ? " race" : "";
     return `<div class="hour ${risk}${race}"><b>${h}h</b>${t}°<br>${w.wind[i]} km/h<br>${w.storm[i]} %</div>`; }).join("");
   const p = activePlan();
   $("#plans").innerHTML = Object.entries(PLANS).map(([k, pl]) => `<div class="plan${k === p.key ? " active" + (k === "A" ? " calm" : "") : ""}"><h3>${pl.title}${k === p.key ? `<span class="tag ${k === "A" ? "ok" : "bad"}">Actif</span>` : ""}</h3>${k === p.key ? `<p class="note">Déclenché : ${p.why}.</p>` : ""}<ul>${pl.items.map(i => `<li>${i}</li>`).join("")}</ul></div>`).join("");
 }
-$("#wx-chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; wxKey = b.dataset.k; renderMeteo(); renderRavitos(); renderApercu(); });
+$("#wx-chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; wxKey = b.dataset.k; renderMeteo(); });
 
+/* ============================================================
+   COURSE EN DIRECT : rejeu de la dernière édition de référence
+   ============================================================ */
+let tEnd = 1;
+function setupDirect() {
+  tEnd = Math.max(...R.replay.runners.map(([, tr]) => tr[tr.length - 2])) + .25;
+  const c = $("#clock"); c.min = -0.25; c.max = tEnd.toFixed(2); c.value = Math.min(tEnd, Math.max(.5, (pred(P()[0].key) || pred("arrivee")).heure_pic)).toFixed(2);
+  const le = lastEd();
+  $("#live-sub").innerHTML = `Rejeu de l'édition ${R.ref} (${dateFr(le.date)}) avec les vrais temps de passage, sur l'horaire de départ choisi. Le jour J, la même vue se mettrait à jour avec le chronométrage en direct.`;
+}
 function renderDirect() {
-  const T = +$("#clock").value / 60; $("#clock-out").textContent = fmt(T);
-  let arrived = 0, out = 0, onc = 0; const pos = [];
-  runners.forEach(r => {
-    if (T < RACE.start) { pos.push(0); return; }
-    if (r.stop && T >= r.stop.time) { out++; return; }
-    const k = Math.min(RACE.km, (T - RACE.start) / r.dur * RACE.km);
-    if (k >= RACE.km) arrived++; else { onc++; pos.push(k); }
-  });
-  $("#live-kpis").innerHTML = stat(T < RACE.start ? nf(RACE.entrants) : nf(onc), T < RACE.start ? "sur la ligne de départ" : "en course") + stat(nf(arrived), "arrivés")
-    + stat(nf(out), "abandons et hors délai", out > 0) + stat(finishers.length && arrived ? fmt(Math.min(...finishers)) : "-", "premier arrivé");
-  const bins = Array(42).fill(0); pos.forEach(k => bins[Math.min(41, Math.floor(k))]++);
+  const t = +$("#clock").value; $("#clock-out").innerHTML = fmtT(t);
+  const st = replayState(t), n = R.replay.runners.length, finT = R.replay.runners.filter(r => r[0] === 0).map(r => r[1].at(-2));
+  $("#live-kpis").innerHTML = stat(t < 0 ? nf(n) : nf(st.onc), t < 0 ? "sur la ligne de départ" : "en course") + stat(nf(st.arr), "arrivés")
+    + stat(nf(st.out), "abandons et hors délai", st.out > 0, "comptés à leur dernier pointage") + stat(st.arr ? fmtT(Math.min(...finT)) : "-", "premier arrivé");
+  const { KM, maxK } = scales(); const nb = Math.min(80, Math.max(20, Math.round(maxK))), bw = maxK / nb;
+  const bins = Array(nb).fill(0); st.pos.forEach(k => bins[Math.min(nb - 1, Math.floor(k / bw))]++);
   const mx = Math.max(10, ...bins);
-  let ex = ""; bins.forEach((v, k) => { if (!v) return; const x = KM(k), w = KM(k + 1) - x - 1, h = v / mx * 110; ex += `<rect x="${x}" y="${238 - h}" width="${w}" height="${h}" fill="${css("--mark")}" opacity=".85"/>`; });
-  let s = profileSVG(ex);
-  RAVITOS.forEach(r => s += `<circle cx="${KM(r.km)}" cy="${ALT(altAt(r.km))}" r="5" fill="${css("--pine")}"/><text class="svglabel" x="${KM(r.km)}" y="${ALT(altAt(r.km)) - 12}" text-anchor="middle">${r.id}</text>`);
-  $("#live-profile").innerHTML = s + "</svg>";
-  $("#cutoffs").innerHTML = `<tr><th>Point</th><th>Fermeture</th><th>Statut</th><th class="n">Arrêtés</th></tr>` + CP.map((c, k) => { const name = k < RAVITOS.length ? `${RAVITOS[k].id} ${RAVITOS[k].name}` : "Arrivée";
-    const n = runners.filter(r => r.stop && r.stop.type === "hd" && r.stop.idx === k).length, closed = T >= c.cutoff, soon = !closed && c.cutoff - T <= .5;
-    return `<tr><td>${name}</td><td>${fmt(c.cutoff)}</td><td><span class="tag ${closed ? "bad" : soon ? "peak" : "ok"}">${closed ? "Fermée" : soon ? "Ferme bientôt" : "Ouverte"}</span></td><td class="n">${closed ? n : "-"}</td></tr>`; }).join("");
-  const ev = [{ t:RACE.start, m:`Départ de ${RACE.entrants} coureurs` }];
-  RAVITOS.forEach((r, i) => { ev.push({ t:Math.min(...passages[i]), m:`Premier coureur à ${r.id} ${r.name}` }); ev.push({ t:peak[i].from, m:`Début du pic d'affluence à ${r.id}` }); ev.push({ t:r.cutoff, m:`Fermeture de ${r.id}` }); });
-  ev.push({ t:Math.min(...finishers), m:"Premier coureur à l'arrivée" });
-  $("#log").innerHTML = ev.filter(e => e.t <= T).sort((a, b) => b.t - a.t).map(e => `<li><time>${fmt(e.t)}</time>${e.m}</li>`).join("") || `<li class="note">La course n'a pas commencé.</li>`;
+  let ex = ""; bins.forEach((v, i) => { if (!v) return; const x = KM(i * bw), w = KM((i + 1) * bw) - x - 1, h = v / mx * 120; ex += `<rect x="${x}" y="${238 - h}" width="${w}" height="${h}" fill="${css("--mark")}" opacity=".85"/>`; });
+  $("#live-profile").innerHTML = profileSVG(ex, "Position des coureurs sur le profil") + pointMarks(true) + "</svg>";
+  const cps = P().filter(p => p.cutoff != null);
+  $("#cutoffs").innerHTML = cps.length ? `<tr><th>Point</th><th>Fermeture</th><th>Statut</th><th class="n">Passés après</th></tr>` + cps.map(p => {
+      const late = realPassages(p.key).filter(x => x > p.cutoff + 1 / 60 && x <= t).length, closed = t >= p.cutoff, soon = !closed && p.cutoff - t <= .5;
+      return `<tr><td>${esc(p.name)}</td><td>${fmtT(p.cutoff)}</td><td><span class="tag ${closed ? "bad" : soon ? "peak" : "ok"}">${closed ? "Fermée" : soon ? "Ferme bientôt" : "Ouverte"}</span></td><td class="n">${closed ? late : "-"}</td></tr>`; }).join("")
+    : `<tr><td class="note">Aucune barrière horaire déclarée pour cette course.</td></tr>`;
+  const ev = [{ t:0, m:`Départ de ${nf(n)} coureurs` }];
+  P().forEach(p => { const ps = realPassages(p.key); if (!ps.length) return;
+    ev.push({ t:ps[0], m:p.key === "arrivee" ? "Premier coureur à l'arrivée" : `Premier coureur à ${esc(p.short)}` });
+    if (p.key !== "arrivee" && ps.length > 20) ev.push({ t:ps[Math.floor(ps.length * .5)], m:`La moitié du peloton est passée à ${esc(p.short)}` });
+    ev.push({ t:ps.at(-1), m:`${p.key === "arrivee" ? "Dernier finisher" : `Dernier coureur pointé à ${esc(p.short)}`}` });
+    if (p.cutoff != null) ev.push({ t:p.cutoff, m:`Barrière de ${esc(p.short)}` }); });
+  $("#log").innerHTML = ev.filter(e => e.t <= t).sort((a, b) => b.t - a.t).slice(0, 40).map(e => `<li><time>${fmtT(e.t)}</time>${e.m}</li>`).join("") || `<li class="note">La course n'a pas commencé.</li>`;
 }
 $("#clock").addEventListener("input", renderDirect);
 let timer = null;
 $("#play").addEventListener("click", () => {
   if (timer) { clearInterval(timer); timer = null; $("#play").textContent = "Lancer"; return; }
+  const c = $("#clock"); if (+c.value >= +c.max - .01) c.value = c.min;
   $("#play").textContent = "Pause";
-  timer = setInterval(() => { const c = $("#clock"); if (+c.value >= +c.max) { clearInterval(timer); timer = null; $("#play").textContent = "Lancer"; return; } c.value = +c.value + 5; renderDirect(); }, 120);
+  const stepT = Math.max(1 / 12, tEnd / 240);
+  timer = setInterval(() => { if (+c.value >= +c.max) { clearInterval(timer); timer = null; $("#play").textContent = "Lancer"; return; } c.value = Math.min(+c.max, +c.value + stepT); renderDirect(); }, 100);
 });
 
 /* ============================================================
-   NAVIGATION
+   NAVIGATION : #vue/course
    ============================================================ */
+$("#race-sel").innerHTML = D.races.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join("");
+function selectRace(id) {
+  R = D.races.find(r => r.id === id) || D.races[0];
+  START = startByRace[R.id] ?? R.start_clock;
+  $("#race-sel").value = R.id;
+  const H = Math.floor(START), M = Math.round((START - H) * 60);
+  $("#start-time").value = `${String(H % 24).padStart(2, "0")}:${String(M).padStart(2, "0")}`;
+  $("#race-meta").textContent = `${R.distance.toLocaleString("fr-FR")} km, ${nf(R.dplus)} m D+`;
+  $("#badge").textContent = `Données réelles ${R.history[0].edition}-${R.history.at(-1).edition}`;
+  ravSel = null; if (timer) $("#play").click();
+  setupDirect(); renderAll();
+}
+function renderAll() { renderApercu(); renderPrep(); renderRavitos(); renderPertes(); renderNavettes(); renderMeteo(); renderDirect(); }
 function route() {
-  const v = (location.hash || "#apercu").slice(1);
-  document.querySelectorAll("[data-view]").forEach(s => s.hidden = s.dataset.view !== v);
-  document.querySelectorAll(".side a").forEach(a => a.hash === "#" + v ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  const [v, r] = (location.hash || "#apercu").slice(1).split("/");
+  view = document.querySelector(`[data-view="${v}"]`) ? v : "apercu";
+  if (r && (!R || r !== R.id)) selectRace(r);
+  document.querySelectorAll("[data-view]").forEach(s => s.hidden = s.dataset.view !== view);
+  document.querySelectorAll(".side a").forEach(a => { a.hash.slice(1).split("/")[0] === view ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); a.href = `#${a.hash.slice(1).split("/")[0]}/${R.id}`; });
   window.scrollTo(0, 0);
 }
+$("#race-sel").addEventListener("change", e => { location.hash = `${view}/${e.target.value}`; });
+$("#start-time").addEventListener("change", e => {
+  const [h, m] = e.target.value.split(":").map(Number); if (isNaN(h)) return;
+  START = h + m / 60; if (START < R.start_clock - 12) START += 24; startByRace[R.id] = START; renderAll();
+});
 addEventListener("hashchange", route);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
-
-function renderAll() { renderApercu(); renderPrep(); renderRavitos(); renderPertes(); renderNavettes(); renderMeteo(); renderDirect(); }
-$("#race-name").textContent = RACE.name;
-$("#race-meta").textContent = `${RACE.dateTxt}, ${RACE.km} km et ${RACE.dplus} m D+, ${RACE.place}`;
-const days = Math.ceil((RACE.date - new Date()) / 864e5);
-$("#countdown").textContent = days > 0 ? `J-${days}` : "Jour J";
-renderAll(); route();
+selectRace(((location.hash.split("/")[1]) || "marath"));
+route();
 </script>
 </body>
 </html>
