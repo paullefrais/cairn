@@ -202,6 +202,20 @@ body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
 .race-tag b{font:600 1.02rem var(--head)}
 .race-tag span{color:var(--muted); font-size:.84rem}
 .ev-stats{color:var(--muted); font-size:.88rem; margin-top:12px}
+/* v6 : bandeau de la course préparée */
+.race-banner{position:relative; overflow:hidden; border-radius:12px; height:112px; margin:-6px 0 22px; color:#fff; box-shadow:var(--shadow); background:var(--c1)}
+.race-banner svg.ridges{position:absolute; inset:0; width:100%; height:100%}
+.race-banner::after{content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 60%, rgba(0,0,0,0) 100%)}
+.race-banner .in{position:relative; z-index:1; display:flex; align-items:center; gap:16px; height:100%; padding:0 22px}
+.race-banner .tile{flex:none; width:76px; height:76px; border-radius:12px; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.race-banner .tile img{max-width:62px; max-height:66px}
+.race-banner .tile span{font:700 1.4rem var(--head); color:var(--c1)}
+.race-banner .kicker{font:600 .82rem var(--head); letter-spacing:.06em; text-transform:uppercase; opacity:.85}
+.race-banner h2{font:700 1.7rem/1.1 var(--head); color:#fff; display:flex; align-items:center; gap:10px; flex-wrap:wrap; text-shadow:0 1px 8px rgba(0,0,0,.3)}
+.race-banner h2 img.cat{background:#fff; border-radius:4px; padding:1px 3px; height:22px}
+.race-banner h2 .dist.neutral{background:rgba(255,255,255,.9); color:#1E2B25; border:none}
+.race-banner .sub{font-size:.95rem; color:rgba(255,255,255,.92); margin-top:4px}
+@media (max-width:700px){ .race-banner{height:auto; min-height:100px} .race-banner .in{padding:14px} .race-banner .tile{width:58px; height:58px} .race-banner .tile img{max-width:48px; max-height:50px} .race-banner h2{font-size:1.3rem} }
 /* v5 : barre d'accueil, chiffres clés, méthode, catégories */
 .home-only{display:none !important}
 body.on-home .home-only{display:inline-flex !important}
@@ -334,6 +348,8 @@ img.cat{height:20px; width:auto; vertical-align:middle; display:inline-block}
         <div class="panel step"><span class="n">3</span><h3>Des décisions</h3><p>Affluence par quart d'heure à chaque ravitaillement, bénévoles, barrières horaires, rapatriements des abandons, et rejeu de la course pour préparer le jour J.</p></div>
       </div>
     </section>
+
+    <div class="race-banner" id="race-banner" hidden></div>
 
     <!-- ================= VUE D'ENSEMBLE ================= -->
     <section data-view="apercu" hidden>
@@ -859,13 +875,13 @@ const distBadge = r => {
 };
 const ICON_PIN = `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
 const ICON_CAL = `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>`;
-function ridges(ev) {
+function ridges(ev, sfx = "") {
   const st = EV_STYLE[ev.id] || { c1:css("--pine"), c2:css("--mark") };
   const seed = [...ev.id].reduce((a, ch) => a + ch.charCodeAt(0), 0);
   const ridge = (base, amp, n, k) => { let d = `M0 250 L0 ${base}`; for (let i = 0; i <= n; i++) { const x = i * 600 / n, y = base - amp * Math.abs(Math.sin((i + seed * k) * 1.7) * Math.cos((i + k) * .9)); d += ` L${x.toFixed(0)} ${y.toFixed(0)}`; } return d + " L600 250 Z"; };
   return `<svg class="ridges" viewBox="0 0 600 250" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-    <defs><linearGradient id="sky-${ev.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${st.c1}"/><stop offset="1" stop-color="${st.c1}" stop-opacity=".75"/></linearGradient></defs>
-    <rect width="600" height="250" fill="url(#sky-${ev.id})"/><circle cx="470" cy="70" r="46" fill="${st.c2}" opacity=".22"/>
+    <defs><linearGradient id="sky-${ev.id}${sfx}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${st.c1}"/><stop offset="1" stop-color="${st.c1}" stop-opacity=".75"/></linearGradient></defs>
+    <rect width="600" height="250" fill="url(#sky-${ev.id}${sfx})"/><circle cx="470" cy="70" r="46" fill="${st.c2}" opacity=".22"/>
     <path d="${ridge(150, 70, 9, 1)}" fill="#fff" opacity=".10"/><path d="${ridge(185, 60, 12, 2)}" fill="#000" opacity=".14"/><path d="${ridge(215, 40, 16, 3)}" fill="#000" opacity=".22"/></svg>`;
 }
 function logoHTML(ev, big) {
@@ -920,12 +936,22 @@ function selectRace(uid) {
   ravSel = null; if (timer) $("#play").click();
   setupDirect(); renderAll();
 }
-function renderAll() { renderHome(); renderApercu(); renderPrep(); renderRavitos(); renderPertes(); renderNavettes(); renderMeteo(); renderDirect(); }
+function renderBanner() {
+  const ev = R.ev, st = EV_STYLE[ev.id] || {}, b = $("#race-banner");
+  b.style.setProperty("--c1", st.c1 || "var(--pine)"); b.style.setProperty("--c2", st.c2 || "var(--mark)");
+  const ini = ev.name.split(/\s+/).filter(w => w.length > 2 && !/^(des?|du|la|le)$/i.test(w)).map(w => w[0]).join("").slice(0, 3).toUpperCase();
+  b.innerHTML = ridges(ev, "-bandeau").replace('viewBox="0 0 600 250"', 'viewBox="0 60 600 190"')
+    + `<div class="in"><div class="tile">${LOGOS[ev.id] ? `<img src="${LOGOS[ev.id]}" alt="Logo ${esc(ev.name)}">` : `<span>${ini}</span>`}</div>`
+    + `<div><div class="kicker">${esc(ev.name)} · préparation de l'édition ${ev.cible}</div><h2>${esc(R.name)} ${distBadge(R)}</h2>`
+    + `<div class="sub">${R.distance.toLocaleString("fr-FR", { maximumFractionDigits:1 })} km, ${nf(R.dplus)} m D+, départ de ${esc(R.start_place.replace(/^d[ée]part\s+/i, ""))} · prochaine édition ${esc(ev.next)}</div></div></div>`;
+}
+function renderAll() { renderBanner(); renderHome(); renderApercu(); renderPrep(); renderRavitos(); renderPertes(); renderNavettes(); renderMeteo(); renderDirect(); }
 function route() {
   const [v, r] = (location.hash || "#accueil").slice(1).split("/");
   view = document.querySelector(`[data-view="${v}"]`) ? v : "accueil";
   if (r && (!R || r !== R.uid)) selectRace(r);
   document.body.classList.toggle("on-home", view === "accueil");
+  $("#race-banner").hidden = view === "accueil";
   document.querySelectorAll("[data-view]").forEach(s => s.hidden = s.dataset.view !== view);
   document.querySelectorAll(".side a").forEach(a => {
     const v0 = a.getAttribute("href").slice(1).split("/")[0];
