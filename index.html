@@ -202,6 +202,38 @@ body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
 .race-tag b{font:600 1.02rem var(--head)}
 .race-tag span{color:var(--muted); font-size:.84rem}
 .ev-stats{color:var(--muted); font-size:.88rem; margin-top:12px}
+/* v5 : barre d'accueil, chiffres clés, méthode, catégories */
+.home-only{display:none !important}
+body.on-home .home-only{display:inline-flex !important}
+.tagline{color:var(--muted); font-size:.92rem; align-items:center; border-left:1px solid var(--rule); padding-left:14px}
+.topnav{gap:4px; align-items:center; margin-left:18px}
+.topnav button{border:none; background:none; color:var(--ink); font:600 .98rem var(--head); padding:8px 12px; border-radius:6px; cursor:pointer}
+.topnav button:hover{background:var(--paper)}
+.quick{font:600 .95rem var(--head); color:var(--ink); background:var(--paper); border:1px solid var(--rule); border-radius:99px; padding:7px 30px 7px 14px; appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%); background-position:calc(100% - 15px) 55%,calc(100% - 10px) 55%; background-size:5px 5px; background-repeat:no-repeat}
+.cta{text-decoration:none; align-items:center; border-radius:99px; background:var(--pine); border-color:var(--pine); color:var(--card)}
+@media (max-width:1560px){ body.on-home .tagline{display:none !important} }
+@media (max-width:1180px){ body.on-home .topnav{display:none !important} }
+@media (max-width:900px){ body.on-home .topnav, body.on-home .quick{display:none !important} }
+.keyfigs{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:22px; max-width:900px}
+.keyfigs div{border-left:3px solid var(--pine); padding:2px 0 2px 12px}
+.keyfigs b{display:block; font:700 1.9rem/1.1 var(--head)}
+.keyfigs span{color:var(--muted); font-size:.92rem}
+@media (max-width:700px){ .keyfigs{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.method-h{margin:40px 0 4px; font-size:1.6rem}
+.steps{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:16px}
+@media (max-width:900px){ .steps{grid-template-columns:1fr} }
+.step .n{display:inline-flex; width:30px; height:30px; border-radius:50%; align-items:center; justify-content:center; background:var(--pine-soft); color:var(--pine); font:700 1rem var(--head); margin-bottom:8px}
+.step h3{font-size:1.15rem; margin-bottom:6px}
+.step p{margin:0; color:var(--muted); font-size:.95rem}
+img.cat{height:20px; width:auto; vertical-align:middle; display:inline-block}
+.race-tag img.cat{height:18px}
+.ev-cats img.cat{height:24px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) img.cat{background:#fff; border-radius:4px; padding:1px 3px}}
+:root[data-theme="dark"] img.cat{background:#fff; border-radius:4px; padding:1px 3px}
+.dist.neutral{background:var(--paper); color:var(--muted); border:1px solid var(--rule)}
+.race-tag .dist.neutral, .ev-cats .dist.neutral{color:var(--muted)}
+.topnav button, .cta, .tagline{white-space:nowrap}
 /* v4 : cartes d'événement façon affiche */
 .event{padding:0; overflow:hidden; display:flex; flex-direction:column}
 .ev-banner{position:relative; height:250px; color:#fff; overflow:hidden; background:var(--c1)}
@@ -253,6 +285,12 @@ body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
     </svg>
     Cairn
   </a>
+  <span class="tagline home-only">Aide à la décision pour organisateurs de trail</span>
+  <nav class="topnav home-only" aria-label="Accueil">
+    <button type="button" data-go="events">Événements</button>
+    <button type="button" data-go="methode">Comment ça marche</button>
+    <button type="button" data-go="contact">Contact</button>
+  </nav>
   <div class="picker">
     <span class="logo" id="ev-logo" aria-hidden="true"></span>
     <label for="race-sel" class="race"><span id="ev-name"></span></label>
@@ -262,6 +300,8 @@ body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
   <div class="spacer"></div>
   <label class="start">Départ prévu <input type="time" id="start-time" step="300"></label>
   <span class="real" id="badge"></span>
+  <select class="quick home-only" id="quick-sel" aria-label="Aller à une course"></select>
+  <a class="btn cta home-only" id="cta" href="#">Présenter ma course</a>
   <button class="icon-btn sq" id="theme" type="button"></button>
 </header>
 
@@ -282,9 +322,17 @@ body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
     <!-- ================= ACCUEIL ================= -->
     <section data-view="accueil">
       <div class="hero"><h1>Préparer chaque édition avec les données des précédentes</h1>
-        <p>Cairn transforme les temps de passage des éditions passées en décisions concrètes pour l'organisateur : affluence à chaque ravitaillement, bénévoles, barrières horaires, rapatriements. Choisissez une course pour commencer.</p></div>
+        <p>Cairn transforme les temps de passage des éditions passées en décisions concrètes pour l'organisateur : affluence à chaque ravitaillement, bénévoles, barrières horaires, rapatriements. Choisissez une course pour commencer.</p>
+        <div class="keyfigs" id="keyfigs"></div></div>
       <div class="events" id="events"></div>
       <p class="note mt" id="home-note"></p>
+      <h2 class="method-h" id="methode">Comment ça marche</h2>
+      <p class="note" style="max-width:70ch">Trois étapes, des résultats publiés jusqu'aux décisions du jour J.</p>
+      <div class="steps">
+        <div class="panel step"><span class="n">1</span><h3>Les éditions passées</h3><p>Les temps de passage de chaque coureur à chaque point, récupérés depuis le chronométrage et anonymisés : aucun nom n'est conservé.</p></div>
+        <div class="panel step"><span class="n">2</span><h3>Un modèle testé</h3><p>Le niveau de chaque coureur est séparé des conditions de l'édition, puis 1 000 éditions sont simulées. Le modèle est testé en prédisant la dernière édition avec les précédentes.</p></div>
+        <div class="panel step"><span class="n">3</span><h3>Des décisions</h3><p>Affluence par quart d'heure à chaque ravitaillement, bénévoles, barrières horaires, rapatriements des abandons, et rejeu de la course pour préparer le jour J.</p></div>
+      </div>
     </section>
 
     <!-- ================= VUE D'ENSEMBLE ================= -->
@@ -790,6 +838,9 @@ $("#play").addEventListener("click", () => {
    ============================================================ */
 const LOGOS = { montcalm:"logos/montcalm.png", grp:"logos/grp.png" };
 const EV_STYLE = { montcalm:{ c1:"#B3121E", c2:"#F2B705" }, grp:{ c1:"#0E5E63", c2:"#8DC63F" } };
+/* catégories officielles de l'indice UTMB, telles qu'affichées par LiveTrail (édition 2025) */
+const OFFICIAL_CAT = { "montcalm-picapic":"100m", "montcalm-picari":"100k", "montcalm-marath":"50k", "montcalm-novis":"20k", "montcalm-mineurs":"20k" };
+const CAT_ORDER = ["100m", "100k", "50k", "20k"];
 /* catégories de distance (badges) */
 function distCat(r) {
   const d = r.distance;
@@ -800,7 +851,12 @@ function distCat(r) {
   if (d < 130) return { t:"100K", c:"#4FA83D" };
   return { t:"100M", c:"#D7332A" };
 }
-const distBadge = r => { const c = distCat(r); return `<span class="dist${c.lt ? " lt" : ""}" style="--dc:${c.c}">${c.t}</span>`; };
+const distBadge = r => {
+  const o = OFFICIAL_CAT[r.uid];
+  if (o) return `<img class="cat" src="logos/categories/${o}.png" alt="Catégorie ${o.toUpperCase()}" title="Catégorie ${o.toUpperCase()} (indice UTMB)">`;
+  const kv = /kv|vertical/i.test(r.name) || (r.distance < 6 && r.dplus / r.distance > 150);
+  return `<span class="dist neutral">${kv ? "KV" : `${Math.round(r.distance)} KM`}</span>`;
+};
 const ICON_PIN = `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
 const ICON_CAL = `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>`;
 function ridges(ev) {
@@ -816,13 +872,21 @@ function logoHTML(ev, big) {
   const ini = ev.name.split(/\s+/).filter(w => w.length > 2 && !/^(des?|du|la|le)$/i.test(w)).map(w => w[0]).join("").slice(0, 3).toUpperCase();
   return `<span class="logo${big ? " lg" : ""}${LOGOS[ev.id] ? " has-img" : ""}" aria-hidden="true">${LOGOS[ev.id] ? `<img src="${LOGOS[ev.id]}" alt="">` : `<span>${ini}</span>`}</span>`;
 }
+$("#quick-sel").innerHTML = `<option value="">Aller à une course…</option>` + EVENTS.map(ev => `<optgroup label="${esc(ev.name)}">${ev.races.map(r => `<option value="${r.uid}">${esc(r.name)}</option>`).join("")}</optgroup>`).join("");
+$("#quick-sel").addEventListener("change", e => { if (e.target.value) location.hash = `apercu/${e.target.value}`; e.target.value = ""; });
+document.querySelector(".topnav").addEventListener("click", e => {
+  const g = e.target.closest("button")?.dataset.go; if (!g) return;
+  const el = g === "events" ? $("#events") : g === "methode" ? $("#methode") : $(".site-foot");
+  el.scrollIntoView({ behavior:"smooth", block:"start" });
+});
 $("#race-sel").innerHTML = EVENTS.map(ev => `<optgroup label="${esc(ev.name)}">${ev.races.map(r => `<option value="${r.uid}">${esc(r.name)}</option>`).join("")}</optgroup>`).join("");
 function renderHome() {
   $("#events").innerHTML = EVENTS.map(ev => {
     const runners = ev.races.reduce((a, r) => a + r.history.reduce((b, h) => b + h.partants, 0), 0);
     const eds = [...new Set(ev.races.flatMap(r => r.history.map(h => h.edition)))].sort();
     const st = EV_STYLE[ev.id] || {}, races = [...ev.races].sort((a, b) => b.distance - a.distance);
-    const cats = [...new Map(races.map(r => [distCat(r).t, r])).values()];
+    const off = CAT_ORDER.filter(c => races.some(r => OFFICIAL_CAT[r.uid] === c));
+    const kmMin = Math.min(...races.map(r => r.distance)), kmMax = Math.max(...races.map(r => r.distance));
     const ini = ev.name.split(/\s+/).filter(w => w.length > 2 && !/^(des?|du|la|le)$/i.test(w)).map(w => w[0]).join("").slice(0, 3).toUpperCase();
     return `<article class="event" style="--c1:${st.c1 || "var(--pine)"}; --c2:${st.c2 || "var(--mark)"}">
       <div class="ev-banner">${ridges(ev)}
@@ -831,12 +895,16 @@ function renderHome() {
           <div class="meta"><span>${ICON_PIN}${esc(ev.place)}</span><span>${ICON_CAL}Prochaine édition : ${esc(ev.next)}</span></div></div>
       </div>
       <div class="ev-body">
-        <div class="ev-cats">${cats.map(distBadge).join("")}</div>
+        <div class="ev-cats">${off.length ? off.map(c => `<img class="cat" src="logos/categories/${c}.png" alt="Catégorie ${c.toUpperCase()}">`).join("") : `<span class="dist neutral">De ${nf(kmMin)} à ${nf(kmMax)} km</span>`}</div>
         <div class="next-line"><b>${esc(ev.next_note.charAt(0).toUpperCase() + ev.next_note.slice(1))}</b></div>
         <div class="races">${races.map(r => `<a class="race-tag" href="#apercu/${r.uid}">${distBadge(r)}<div><b>${esc(r.name)}</b><span>${r.distance.toLocaleString("fr-FR", { maximumFractionDigits:1 })} km, ${nf(r.dplus)} m D+</span><span>≈ ${nf(r.model.n_pred)} partants attendus</span></div></a>`).join("")}</div>
         <p class="ev-stats">${ev.races.length} courses, éditions ${eds[0]} à ${eds.at(-1)}, ${nf(runners)} participations analysées.</p>
       </div></article>`;
   }).join("");
+  const allEds = [...new Set(EVENTS.flatMap(ev => ev.races.flatMap(r => r.history.map(h => h.edition))))].sort();
+  const parts = EVENTS.reduce((a, ev) => a + ev.races.reduce((b, r) => b + r.history.reduce((c, h) => c + h.partants, 0), 0), 0);
+  $("#keyfigs").innerHTML = `<div><b>${EVENTS.length}</b><span>événements</span></div><div><b>${RACES.length}</b><span>courses</span></div>`
+    + `<div><b>${allEds[0]}-${allEds.at(-1)}</b><span>éditions analysées</span></div><div><b>${nf(parts)}</b><span>participations</span></div>`;
   $("#home-note").textContent = "Données issues des résultats publiés sur LiveTrail, anonymisées. Prévisions indicatives, à confronter à l'expérience de chaque organisation.";
 }
 function selectRace(uid) {
@@ -880,6 +948,8 @@ function paintThemeBtn() { const l = isDark() ? "Passer en mode clair" : "Passer
 const saved = store.get("cairn-theme"); if (saved) document.documentElement.dataset.theme = saved;
 $("#theme").addEventListener("click", () => { const t = isDark() ? "light" : "dark"; document.documentElement.dataset.theme = t; store.set("cairn-theme", t); paintThemeBtn(); renderAll(); });
 /* contact */
+$("#cta").href = CONTACT_EMAIL ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Cairn : présenter ma course")}` : LINKEDIN;
+if (!CONTACT_EMAIL) { $("#cta").target = "_blank"; $("#cta").rel = "noopener"; }
 $("#contact").href = CONTACT_EMAIL ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Cairn : prise de contact")}` : LINKEDIN;
 if (!CONTACT_EMAIL) { $("#contact").target = "_blank"; $("#contact").rel = "noopener"; }
 addEventListener("hashchange", route);
