@@ -1,9 +1,9 @@
 # Logos des événements
 
-Les logos sont affichés seulement s'ils sont déclarés dans `index.html` (constante `LOGOS`) :
+Les logos affichés sont déclarés dans `index.html` (constante `LOGOS`), avec les couleurs de bannière de chaque événement (constante `EV_STYLE`) :
 
 ```js
 const LOGOS = { montcalm:"logos/montcalm.png", grp:"logos/grp.png" };
 ```
 
-N'ajoutez un logo qu'avec l'accord de l'organisation concernée : sans accord, la page laisserait croire à un partenariat. En attendant, un monogramme neutre est affiché.
+Ils sont utilisés à titre de démonstration pour les présentations aux organisateurs. Le site est en `noindex` et le pied de page précise que le prototype est indépendant des organisations citées. À retirer si une organisation le demande.

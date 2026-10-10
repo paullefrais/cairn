@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cairn | Challenge du Montcalm</title>
 <meta name="description" content="Cairn, prototype d'aide à la décision pour les organisateurs de trail, appliqué aux données réelles du Challenge du Montcalm : affluence prévue aux ravitaillements, barrières horaires, rapatriements et rejeu des éditions passées.">
@@ -25,11 +26,11 @@
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#141B18; --card:#1C2521; --ink:#E4EBE6; --muted:#9AAAA1; --rule:#2F3B35;
-  --pine:#7FC2A3; --pine-soft:#22342C; --mark:#F0C23A; --mark-soft:#3A3218; --alert:#F07A72; --alert-soft:#3D2120;}}
+  --paper:#111513; --card:#1A1F1C; --ink:#ECF0ED; --muted:#A4AFA8; --rule:#2E3632;
+  --pine:#74C69D; --pine-soft:#1E3128; --mark:#E8B84A; --mark-soft:#352C17; --alert:#F2857B; --alert-soft:#3A2321;}}
 :root[data-theme="dark"]{
-  --paper:#141B18; --card:#1C2521; --ink:#E4EBE6; --muted:#9AAAA1; --rule:#2F3B35;
-  --pine:#7FC2A3; --pine-soft:#22342C; --mark:#F0C23A; --mark-soft:#3A3218; --alert:#F07A72; --alert-soft:#3D2120;}
+  --paper:#111513; --card:#1A1F1C; --ink:#ECF0ED; --muted:#A4AFA8; --rule:#2E3632;
+  --pine:#74C69D; --pine-soft:#1E3128; --mark:#E8B84A; --mark-soft:#352C17; --alert:#F2857B; --alert-soft:#3A2321;}
 *,*::before,*::after{box-sizing:inherit}
 [hidden]{display:none !important}
 html,body{margin:0}
@@ -162,17 +163,27 @@ td.c, th.c{text-align:center}
 @media (max-width:900px){ .layout{grid-template-columns:minmax(0,1fr)} .top{padding:10px 16px} .picker select{max-width:100%} }
 #rav-table td, #rav-table th{padding:8px 7px}
 .nowrap{white-space:nowrap}
+/* v4 : mode sombre */
+:root{--shadow:0 1px 2px rgba(20,30,25,.06), 0 6px 18px rgba(20,30,25,.06); --navact:var(--pine); --navact-ink:var(--card)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.35); --navact:var(--pine-soft); --navact-ink:var(--pine)}}
+:root[data-theme="dark"]{--shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.35); --navact:var(--pine-soft); --navact-ink:var(--pine)}
+.panel, .event{box-shadow:var(--shadow)}
+.side a[aria-current="page"]{background:var(--navact); color:var(--navact-ink); font-weight:600; box-shadow:inset 3px 0 0 var(--pine)}
+.top, nav.side{background:var(--card)}
 /* v3 : accueil, thème, logos, infobulles */
 .brand{color:var(--ink); text-decoration:none}
 .icon-btn{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--rule); background:var(--card); color:var(--ink); border-radius:99px; padding:5px 12px; cursor:pointer; font-size:.9rem}
 .icon-btn svg{width:16px; height:16px}
 .icon-btn.sq{padding:7px; border-radius:50%}
-@media (max-width:1300px){ #ev-name{display:none} }
+@media (max-width:1500px){ #ev-name{display:none} }
+@media (max-width:1250px){ #badge{display:none} }
+.top{flex-wrap:nowrap} @media (max-width:900px){ .top{flex-wrap:wrap} }
 .side a.home{font-weight:600; margin-bottom:6px}
 .side a .ico{width:18px; height:18px; flex:none}
 body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
 .logo{position:relative; display:inline-flex; align-items:center; justify-content:center; flex:none; width:36px; height:36px; border-radius:8px; overflow:hidden; background:var(--pine-soft); color:var(--pine); font:700 .95rem var(--head); letter-spacing:.02em}
-.logo img{width:100%; height:100%; object-fit:contain; background:#fff}
+.logo img{width:100%; height:100%; object-fit:contain; padding:2px}
+.logo.has-img{background:#fff; box-shadow:0 0 0 1px var(--rule)}
 .logo.lg{width:64px; height:64px; font-size:1.4rem; border-radius:12px}
 .hero{max-width:780px}
 .hero h1{font-size:2.3rem}
@@ -191,6 +202,29 @@ body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
 .race-tag b{font:600 1.02rem var(--head)}
 .race-tag span{color:var(--muted); font-size:.84rem}
 .ev-stats{color:var(--muted); font-size:.88rem; margin-top:12px}
+/* v4 : cartes d'événement façon affiche */
+.event{padding:0; overflow:hidden; display:flex; flex-direction:column}
+.ev-banner{position:relative; height:250px; color:#fff; overflow:hidden; background:var(--c1)}
+.ev-banner svg.ridges{position:absolute; inset:0; width:100%; height:100%}
+.ev-banner::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,.62) 100%)}
+.ev-tile{position:absolute; left:50%; top:22px; transform:translateX(-50%); width:118px; height:118px; background:#fff; border-radius:16px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,.28); z-index:1}
+.ev-tile img{max-width:96px; max-height:104px}
+.ev-tile span{font:700 2rem var(--head); color:var(--c1)}
+.ev-caption{position:absolute; left:22px; right:22px; bottom:16px; z-index:1}
+.ev-caption h2{font:700 1.75rem/1.1 var(--head); color:#fff; text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.ev-caption .meta{display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:6px; font-size:.95rem; color:rgba(255,255,255,.92)}
+.ev-caption .meta span{display:inline-flex; align-items:center; gap:6px}
+.ev-caption svg.i{width:15px; height:15px}
+.ev-body{padding:16px 20px 18px; display:flex; flex-direction:column; gap:12px; flex:1}
+.ev-cats{display:flex; flex-wrap:wrap; gap:6px}
+.dist{display:inline-flex; align-items:center; justify-content:center; min-width:44px; padding:2px 8px; border-radius:4px; font:700 .86rem/1.4 var(--head); letter-spacing:.02em; color:#fff; background:var(--dc)}
+.dist.lt{color:#1E2B25}
+.race-tag{gap:6px; align-items:flex-start}
+.race-tag > div{display:flex; flex-direction:column; min-width:0}
+.race-tag .dist{color:#fff; font-size:.78rem; min-width:40px}
+.race-tag .dist.lt{color:#1E2B25}
+.next-line{font-size:.92rem; color:var(--muted)}
+.next-line b{color:var(--ink)}
 .site-foot{display:flex; flex-wrap:wrap; align-items:center; gap:14px; justify-content:space-between; border-top:1px solid var(--rule); margin-top:36px; padding-top:18px; color:var(--muted); font-size:.9rem}
 .site-foot .btn{text-decoration:none}
 .chartbox{position:relative}
@@ -330,7 +364,7 @@ body.on-home .picker, body.on-home .start, body.on-home #badge{display:none}
       </div>
     </section>
     <footer class="site-foot">
-      <span>Cairn, prototype d'aide à la décision pour les organisateurs de trail. Données LiveTrail anonymisées.</span>
+      <span>Cairn, prototype d'aide à la décision pour les organisateurs de trail. Prototype indépendant, non affilié aux organisations citées ; logos utilisés à titre de démonstration. Données LiveTrail anonymisées.</span>
       <a class="btn" id="contact" href="#">Nous contacter</a>
     </footer>
   </main>
@@ -347,6 +381,7 @@ const LINKEDIN = "https://www.linkedin.com/in/paullefrais";
 const EVENTS = window.CAIRN_EVENTS || [];
 const RACES = EVENTS.flatMap(ev => ev.races.map(r => Object.assign(r, { ev, uid:`${ev.id}-${r.id}` })));
 const $ = s => document.querySelector(s);
+const isDarkNow = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const nf = n => Math.round(n).toLocaleString("fr-FR");
 const stat = (v, l, warn, sub) => `<div class="panel stat${warn ? " warn" : ""}"><div class="v">${v}</div><div class="l">${l}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ""}</div>`;
@@ -443,7 +478,7 @@ function busiest() {
 function renderApercu() {
   const n = R.pred.n, start = pred(P()[0].key) ? pred(P()[0].key).n : n, arr = pred("arrivee"), b = busiest(), le = lastEd();
   $("#ov-title").textContent = `${R.name} : préparer l'édition ${R.ev.cible}`;
-  $("#ov-sub").textContent = `Prévisions tirées des éditions ${R.model.valides.join(", ")} (LiveTrail). Départ de ${R.start_place}, ${R.distance.toLocaleString("fr-FR")} km et ${nf(R.dplus)} m D+.`;
+  $("#ov-sub").textContent = `Prévisions tirées des éditions ${R.model.valides.join(", ")} (LiveTrail). Départ de ${R.start_place.replace(/^d[ée]part\s+/i, "")}, ${R.distance.toLocaleString("fr-FR")} km et ${nf(R.dplus)} m D+.`;
   $("#kpis").innerHTML =
       stat(nf(R.model.n_pred), "partants attendus", false, `fourchette ${nf(R.model.n_pred - 1.28 * R.model.n_sd)} à ${nf(R.model.n_pred + 1.28 * R.model.n_sd)} ; ${nf(le.partants)} en ${R.ref}`)
     + stat(`${Math.round(R.model.p_dnf * 100)} %`, "d'abandons et hors délai", R.model.p_dnf > .2, `soit environ ${nf(R.model.n_pred - n[1])} coureurs à rapatrier`)
@@ -454,7 +489,7 @@ function renderApercu() {
   /* profil + bulles d'affluence */
   const { KM } = scales(); let ex = "";
   const maxPk = Math.max(...P().map(p => pred(p.key) ? pred(p.key).pic[1] : 0));
-  P().forEach(p => { const pr = pred(p.key); if (!pr) return; const w = 6 + 34 * pr.pic[1] / maxPk; ex += `<rect x="${KM(p.km) - w / 2}" y="20" width="${w}" height="220" fill="${css("--mark")}" opacity=".26"/>`; });
+  P().forEach(p => { const pr = pred(p.key); if (!pr) return; const w = 6 + 34 * pr.pic[1] / maxPk; ex += `<rect x="${KM(p.km) - w / 2}" y="20" width="${w}" height="220" fill="${css("--mark")}" opacity="${isDarkNow() ? .16 : .26}"/>`; });
   $("#profile").innerHTML = profileSVG(ex) + pointMarks(true) + "</svg>";
 
   /* points à décider */
@@ -753,20 +788,54 @@ $("#play").addEventListener("click", () => {
 /* ============================================================
    NAVIGATION : #vue/course
    ============================================================ */
-const LOGOS = {};                    // ← logos autorisés, ex. { grp:"logos/grp.png", montcalm:"logos/montcalm.png" }
+const LOGOS = { montcalm:"logos/montcalm.png", grp:"logos/grp.png" };
+const EV_STYLE = { montcalm:{ c1:"#B3121E", c2:"#F2B705" }, grp:{ c1:"#0E5E63", c2:"#8DC63F" } };
+/* catégories de distance (badges) */
+function distCat(r) {
+  const d = r.distance;
+  if (/kv|vertical/i.test(r.name) || (d < 6 && r.dplus / d > 150)) return { t:"KV", c:"#8E5BA8" };
+  if (d < 15) return { t:"10K", c:"#2F8FCB" };
+  if (d < 35) return { t:"20K", c:"#F2CF1D", lt:true };
+  if (d < 75) return { t:"50K", c:"#EE7F22" };
+  if (d < 130) return { t:"100K", c:"#4FA83D" };
+  return { t:"100M", c:"#D7332A" };
+}
+const distBadge = r => { const c = distCat(r); return `<span class="dist${c.lt ? " lt" : ""}" style="--dc:${c.c}">${c.t}</span>`; };
+const ICON_PIN = `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
+const ICON_CAL = `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>`;
+function ridges(ev) {
+  const st = EV_STYLE[ev.id] || { c1:css("--pine"), c2:css("--mark") };
+  const seed = [...ev.id].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+  const ridge = (base, amp, n, k) => { let d = `M0 250 L0 ${base}`; for (let i = 0; i <= n; i++) { const x = i * 600 / n, y = base - amp * Math.abs(Math.sin((i + seed * k) * 1.7) * Math.cos((i + k) * .9)); d += ` L${x.toFixed(0)} ${y.toFixed(0)}`; } return d + " L600 250 Z"; };
+  return `<svg class="ridges" viewBox="0 0 600 250" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs><linearGradient id="sky-${ev.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${st.c1}"/><stop offset="1" stop-color="${st.c1}" stop-opacity=".75"/></linearGradient></defs>
+    <rect width="600" height="250" fill="url(#sky-${ev.id})"/><circle cx="470" cy="70" r="46" fill="${st.c2}" opacity=".22"/>
+    <path d="${ridge(150, 70, 9, 1)}" fill="#fff" opacity=".10"/><path d="${ridge(185, 60, 12, 2)}" fill="#000" opacity=".14"/><path d="${ridge(215, 40, 16, 3)}" fill="#000" opacity=".22"/></svg>`;
+}
 function logoHTML(ev, big) {
   const ini = ev.name.split(/\s+/).filter(w => w.length > 2 && !/^(des?|du|la|le)$/i.test(w)).map(w => w[0]).join("").slice(0, 3).toUpperCase();
-  return `<span class="logo${big ? " lg" : ""}" aria-hidden="true">${LOGOS[ev.id] ? `<img src="${LOGOS[ev.id]}" alt="">` : `<span>${ini}</span>`}</span>`;
+  return `<span class="logo${big ? " lg" : ""}${LOGOS[ev.id] ? " has-img" : ""}" aria-hidden="true">${LOGOS[ev.id] ? `<img src="${LOGOS[ev.id]}" alt="">` : `<span>${ini}</span>`}</span>`;
 }
 $("#race-sel").innerHTML = EVENTS.map(ev => `<optgroup label="${esc(ev.name)}">${ev.races.map(r => `<option value="${r.uid}">${esc(r.name)}</option>`).join("")}</optgroup>`).join("");
 function renderHome() {
   $("#events").innerHTML = EVENTS.map(ev => {
     const runners = ev.races.reduce((a, r) => a + r.history.reduce((b, h) => b + h.partants, 0), 0);
     const eds = [...new Set(ev.races.flatMap(r => r.history.map(h => h.edition)))].sort();
-    return `<article class="event"><header>${logoHTML(ev, true)}<div><h2>${esc(ev.name)}</h2><div class="where">${esc(ev.place)}</div></div></header>
-      <div class="next"><b>Prochaine édition : ${esc(ev.next)}</b><span>${esc(ev.next_note)}</span></div>
-      <div class="races">${[...ev.races].sort((a, b) => b.distance - a.distance).map(r => `<a class="race-tag" href="#apercu/${r.uid}"><b>${esc(r.name)}</b><span>${r.distance.toLocaleString("fr-FR", { maximumFractionDigits:1 })} km, ${nf(r.dplus)} m D+</span><span>≈ ${nf(r.model.n_pred)} partants attendus</span></a>`).join("")}</div>
-      <p class="ev-stats">${ev.races.length} courses, éditions ${eds[0]} à ${eds.at(-1)}, ${nf(runners)} participations analysées.</p></article>`;
+    const st = EV_STYLE[ev.id] || {}, races = [...ev.races].sort((a, b) => b.distance - a.distance);
+    const cats = [...new Map(races.map(r => [distCat(r).t, r])).values()];
+    const ini = ev.name.split(/\s+/).filter(w => w.length > 2 && !/^(des?|du|la|le)$/i.test(w)).map(w => w[0]).join("").slice(0, 3).toUpperCase();
+    return `<article class="event" style="--c1:${st.c1 || "var(--pine)"}; --c2:${st.c2 || "var(--mark)"}">
+      <div class="ev-banner">${ridges(ev)}
+        <div class="ev-tile">${LOGOS[ev.id] ? `<img src="${LOGOS[ev.id]}" alt="Logo ${esc(ev.name)}">` : `<span>${ini}</span>`}</div>
+        <div class="ev-caption"><h2>${esc(ev.name)}</h2>
+          <div class="meta"><span>${ICON_PIN}${esc(ev.place)}</span><span>${ICON_CAL}Prochaine édition : ${esc(ev.next)}</span></div></div>
+      </div>
+      <div class="ev-body">
+        <div class="ev-cats">${cats.map(distBadge).join("")}</div>
+        <div class="next-line"><b>${esc(ev.next_note.charAt(0).toUpperCase() + ev.next_note.slice(1))}</b></div>
+        <div class="races">${races.map(r => `<a class="race-tag" href="#apercu/${r.uid}">${distBadge(r)}<div><b>${esc(r.name)}</b><span>${r.distance.toLocaleString("fr-FR", { maximumFractionDigits:1 })} km, ${nf(r.dplus)} m D+</span><span>≈ ${nf(r.model.n_pred)} partants attendus</span></div></a>`).join("")}</div>
+        <p class="ev-stats">${ev.races.length} courses, éditions ${eds[0]} à ${eds.at(-1)}, ${nf(runners)} participations analysées.</p>
+      </div></article>`;
   }).join("");
   $("#home-note").textContent = "Données issues des résultats publiés sur LiveTrail, anonymisées. Prévisions indicatives, à confronter à l'expérience de chaque organisation.";
 }
@@ -776,9 +845,9 @@ function selectRace(uid) {
   $("#race-sel").value = R.uid;
   const H = Math.floor(START), M = Math.round((START - H) * 60);
   $("#start-time").value = `${String(H % 24).padStart(2, "0")}:${String(M).padStart(2, "0")}`;
-  $("#race-meta").textContent = `${R.distance.toLocaleString("fr-FR", { maximumFractionDigits:1 })} km, ${nf(R.dplus)} m D+`;
+  $("#race-meta").innerHTML = `${distBadge(R)} ${R.distance.toLocaleString("fr-FR", { maximumFractionDigits:1 })} km, ${nf(R.dplus)} m D+`;
   $("#ev-name").textContent = R.ev.name;
-  $("#ev-logo").outerHTML = logoHTML(R.ev).replace('class="logo"', 'class="logo" id="ev-logo"');
+  $("#ev-logo").outerHTML = logoHTML(R.ev).replace('<span class="logo', '<span id="ev-logo" class="logo');
   $("#badge").textContent = `Données réelles ${R.history[0].edition}-${R.history.at(-1).edition}`;
   ravSel = null; if (timer) $("#play").click();
   setupDirect(); renderAll();
